@@ -403,33 +403,33 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex flex-col gap-2 group hover:border-brand/30 transition-all shadow-xl">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl">
             <div className="flex items-center gap-2 text-zinc-500">
-              <Store size={14} className="group-hover:text-brand transition-colors" />
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Unidade</label>
+              <Store size={16} className="group-hover:text-brand transition-colors" />
+              <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Unidade</label>
             </div>
-            <select className="bg-transparent text-lg font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
+            <select className="bg-transparent text-xl font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
               <option value="" className="bg-zinc-950">Selecione uma unidade</option>
               <option value="all" className="bg-zinc-950 font-black text-brand italic uppercase">🌟 Todas as Unidades (Unificado)</option>
               {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
             </select>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex flex-col gap-2 group hover:border-brand/30 transition-all shadow-xl">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl">
             <div className="flex items-center gap-2 text-zinc-500">
-              <CalendarDays size={14} className="group-hover:text-brand transition-colors" />
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Mês de Referência</label>
+              <CalendarDays size={16} className="group-hover:text-brand transition-colors" />
+              <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Mês de Referência</label>
             </div>
-            <input type="month" className="bg-transparent text-lg font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
+            <input type="month" className="bg-transparent text-xl font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
           </div>
         </div>
 
         {isUnifiedView && (
-          <div className="bg-brand/10 border border-brand/20 p-5 rounded-2xl flex items-start gap-4 backdrop-blur-md animate-fade-in">
-            <AlertCircle className="text-brand shrink-0 mt-0.5" size={20} />
+          <div className="bg-brand/10 border border-brand/20 p-6 rounded-2xl flex items-start gap-4 backdrop-blur-md animate-fade-in">
+            <AlertCircle className="text-brand shrink-0 mt-0.5" size={24} />
             <div>
-              <h3 className="font-display font-black italic uppercase text-brand mb-1">Visão Unificada (Leitura e Fechamento)</h3>
-              <p className="text-xs font-medium text-zinc-400 leading-relaxed">
+              <h3 className="text-lg font-display font-black italic uppercase text-brand mb-1">Visão Unificada (Leitura e Fechamento)</h3>
+              <p className="text-sm font-medium text-zinc-400 leading-relaxed">
                 Nesta tela os valores dos barbeiros de múltiplas unidades estão <strong>somados</strong>. 
                 Os campos de digitação estão bloqueados para proteger os dados individuais. Use esta tela para conferir a Garantia global, adicionar vales e realizar a baixa do pagamento.
               </p>
@@ -448,10 +448,10 @@ function App() {
                     <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/10">
-                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
-                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-64">Quinzena 1</th>
-                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-96">Quinzena 2</th>
-                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-32 text-center">Ações</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-72">Quinzena 1</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-[400px]">Quinzena 2</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-40 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -468,62 +468,60 @@ function App() {
                           return (
                             <React.Fragment key={barber.id}>
                               <tr className="hover:bg-white/[0.02] transition-colors group">
-                                <td className="p-5 align-top">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-sm uppercase shadow-inner group-hover:border-brand/30 transition-all">
+                                <td className="p-6 align-top">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shadow-inner group-hover:border-brand/30 transition-all">
                                       {barber.name.substring(0, 2)}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-display font-black text-white group-hover:text-brand transition-colors italic uppercase">{barber.name}</p>
-                                      <p className="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase tracking-wider">
+                                      <p className="text-base font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight">{barber.name}</p>
+                                      <p className="text-xs text-zinc-500 font-bold mt-1 uppercase tracking-widest opacity-60">
                                         {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
                                       </p>
                                     </div>
                                   </div>
                                 </td>
-                                
-                                <td className="p-5 align-top bg-white/[0.01]">
-                                  <div className="space-y-4">
+                                      <td className="p-6 align-top bg-white/[0.01]">
+                                  <div className="space-y-5">
                                     <div>
-                                      <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto (Dia 01-15)</label>
+                                      <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto (Dia 01-15)</label>
                                       <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
                                         <input 
                                           type="number"
                                           disabled={isUnifiedView}
-                                          className={`w-full border rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50 focus:ring-1 focus:ring-brand/20'}`}
+                                          className={`w-full border rounded-xl py-3 pl-10 pr-3 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50 focus:ring-1 focus:ring-brand/20'}`}
                                           placeholder="0,00"
                                           value={isUnifiedView ? sums.sumQ1 : (commissions[barber.id]?.quinzena_1 === 0 ? '' : commissions[barber.id]?.quinzena_1)}
                                           onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', parseFloat(e.target.value) || 0)}
                                         />
                                       </div>
                                     </div>
-                                    <div className="bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                    <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
-                                        <span className={`text-base font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
+                                        <span className="text-xs font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
+                                        <span className={`text-lg font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
-                                        className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
+                                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
                                       >
                                         {statusQ1 === 'paid' ? '✅ Já Pago' : 'Pendente'}
                                       </button>
                                     </div>
                                   </div>
                                 </td>
-
-                                <td className="p-5 align-top">
-                                  <div className="space-y-4">
-                                    <div className="flex gap-3">
+                                <td className="p-6 align-top">
+                                  <div className="space-y-5">
+                                    <div className="flex gap-4">
                                       <div className="flex-1">
-                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto Avulso (16-Fim)</label>
+                                        <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Avulso (16-Fim)</label>
                                         <div className="relative">
-                                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
                                           <input 
                                             type="number"
                                             disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-2.5 pl-8 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
+                                            className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
                                             placeholder="0"
                                             value={isUnifiedView ? sums.sumQ2 : (commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
@@ -531,13 +529,13 @@ function App() {
                                         </div>
                                       </div>
                                       <div className="flex-1">
-                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto Assinaturas</label>
+                                        <label className="text-[10px] font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Assinaturas</label>
                                         <div className="relative">
-                                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
                                           <input 
                                             type="number"
                                             disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-2.5 pl-8 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
+                                            className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
                                             placeholder="0"
                                             value={isUnifiedView ? sums.sumAssin : (commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
@@ -545,42 +543,41 @@ function App() {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                    <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
-                                        <span className={`text-base font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
+                                        <span className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
+                                        <span className={`text-lg font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
-                                        className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
+                                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
                                       >
                                         {statusQ2 === 'paid' ? '✅ Já Pago' : 'Pendente'}
                                       </button>
                                     </div>
                                   </div>
                                 </td>
-
-                                <td className="p-5 align-top text-center">
-                                  <div className="flex flex-col items-center gap-3">
+                                <td className="p-6 align-top text-center">
+                                  <div className="flex flex-col items-center gap-4">
                                     <button 
                                       onClick={() => {
                                         setSettingsModalBarber(barber.id);
                                         const g = guarantees[barber.id];
                                         setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
                                       }}
-                                      className="w-full p-3 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                                      className="w-full p-4 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
                                       title="Configurar Garantia"
                                     >
-                                      <Settings size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Garantia</span>
+                                      <Settings size={18} /> <span className="text-xs font-black uppercase tracking-widest">Garantia</span>
                                     </button>
                                     
                                     <button 
                                       onClick={() => toggleExpand(barber.id)}
-                                      className={`w-full p-3 border rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30 shadow-[0_0_20px_rgba(225,6,0,0.1)]' : 'bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10'}`}
+                                      className={`w-full p-4 border rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30 shadow-[0_0_20px_rgba(225,6,0,0.1)]' : 'bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10'}`}
                                     >
-                                      <Wallet size={14} /> 
+                                      <Wallet size={18} /> 
                                       {barberVouchers.length > 0 ? `${barberVouchers.length} Vales` : 'Add Vale'}
-                                      {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                                      {isExpanded ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
                                     </button>
                                   </div>
                                 </td>
