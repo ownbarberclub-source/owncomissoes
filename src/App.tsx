@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>('');
+  const [selectedUnit, setSelectedUnit] = useState<string>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>(new Date().toISOString().slice(0, 7));
   const [barbers, setBarbers] = useState<Barber[]>([]);
   
