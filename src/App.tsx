@@ -230,7 +230,7 @@ function App() {
           </div>
           <h1 className="text-2xl font-bold mb-2">OWN Comissões</h1>
           <p className="text-text-muted mb-8">Por favor, faça login através do OWN Hub para continuar.</p>
-          <a href="https://own-hub.vercel.app" className="btn-primary w-full justify-center">
+          <a href="https://ownpainel.vercel.app" className="btn-primary w-full justify-center">
             Ir para o Hub
           </a>
         </div>
