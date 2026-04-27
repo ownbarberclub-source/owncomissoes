@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
-  Save, History, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
+  Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
   Settings, X, ChevronDown, ChevronUp
 } from 'lucide-react';
@@ -281,51 +281,6 @@ function App() {
     });
   };
 
-  const handleSave = async () => {
-    if (!selectedPeriod || !selectedUnit) return;
-    setSaving(true);
-
-    try {
-      const commToSave = Object.values(commissions).map(c => {
-        return {
-          unit_id: c.unit_id,
-          period: selectedPeriod,
-          barber_id: c.barber_id,
-          quinzena_1: c.quinzena_1,
-          quinzena_2_avulso: c.quinzena_2_avulso,
-          mes_assinatura: c.mes_assinatura,
-          status_q1: c.status_q1 || 'pending',
-          status_q2: c.status_q2 || 'pending',
-          updated_at: new Date().toISOString()
-        };
-      });
-
-      const { error: commError } = await supabase.from('previa_manual_payments').upsert(commToSave, { onConflict: 'barber_id,period' });
-      if (commError) throw commError;
-
-      const { error: delError } = await supabase.from('previa_barber_vouchers').delete()
-        .eq('period', selectedPeriod).in('barber_id', barbers.map(b => b.id));
-      if (delError) throw delError;
-
-      if (vouchers.length > 0) {
-        const vouchersToSave = vouchers.map(v => ({
-          barber_id: v.barber_id,
-          period: selectedPeriod,
-          value: parseFloat(v.value as any) || 0,
-          description: v.description,
-          deduct_from: v.deduct_from,
-          date: v.date
-        }));
-        const { error: vouchError } = await supabase.from('previa_barber_vouchers').insert(vouchersToSave);
-        if (vouchError) throw vouchError;
-      }
-      showNotification('success', 'Dados salvos com sucesso!');
-    } catch (error: any) {
-      showNotification('error', `Erro ao salvar: ${error.message}`);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleSaveIndividual = async (barberId: string, allIds: string[]) => {
     if (!selectedPeriod) return;
