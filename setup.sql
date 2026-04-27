@@ -1,3 +1,14 @@
+-- Tabela de barbeiros
+CREATE TABLE IF NOT EXISTS previa_barbers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    unit_id UUID REFERENCES previa_units(id),
+    name TEXT NOT NULL,
+    nickname TEXT,
+    photo_url TEXT,
+    is_hidden_crm BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Tabela para armazenar os lançamentos manuais de comissão
 CREATE TABLE IF NOT EXISTS previa_manual_payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

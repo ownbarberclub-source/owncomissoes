@@ -24,6 +24,8 @@ function App() {
   const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string}>({value: '', until: ''});
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -395,8 +397,16 @@ function App() {
                </h1>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
+            <div className="flex items-center gap-4">
+              {isAdmin && (
+                <button 
+                  onClick={() => setManageProfessionalsModal(true)}
+                  className="hidden sm:flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-white/10 transition-all"
+                >
+                  <UserIcon size={14} className="text-brand" /> Profissionais
+                </button>
+              )}
+              <div className="hidden md:flex flex-col items-end">
               <p className="text-sm font-display font-black text-white flex items-center gap-2 italic uppercase">
                 {isAdmin ? <ShieldCheck size={14} className="text-brand" /> : <UserIcon size={14} className="text-zinc-500" />}
                 {session.name}
@@ -752,53 +762,159 @@ function App() {
         )}
       </AnimatePresence>
 
-      {settingsModalBarber && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-[32px] w-full max-w-md p-10 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-brand opacity-50" />
-            <button onClick={() => setSettingsModalBarber(null)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
-            
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
-                <ShieldCheck size={28} />
+      {/* Modal de Garantia */}
+      <AnimatePresence>
+        {settingsModalBarber && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-[32px] w-full max-w-md p-10 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-brand opacity-50" />
+              <button onClick={() => setSettingsModalBarber(null)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
+                  <ShieldCheck size={28} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tight">Garantia Prometida</h2>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Configuração de produção mínima</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tight">Garantia Prometida</h2>
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Configuração de produção mínima</p>
-              </div>
-            </div>
 
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Total do Mês (R$)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                  <input type="number" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all text-lg" placeholder="Ex: 3000" value={tempGuarantee.value} onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))} />
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Total do Mês (R$)</label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all text-lg" placeholder="Ex: 3000" value={tempGuarantee.value} onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Válido Até (Mês)</label>
+                  <div className="relative">
+                    <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                    <input type="month" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
+                  </div>
+                </div>
+                <div className="bg-brand/5 p-5 rounded-2xl border border-brand/10">
+                  <p className="text-[11px] text-brand/80 leading-relaxed font-medium">
+                    <strong>Atenção:</strong> O sistema dividirá o valor pelo número de dias do mês e aplicará a fração na quinzena correspondente. O barbeiro receberá o maior valor entre a produção real e a garantia.
+                  </p>
+                </div>
+                <button 
+                  onClick={saveGuarantee} 
+                  disabled={saving} 
+                  className="w-full mt-2 bg-brand text-white py-5 rounded-2xl font-display font-black italic uppercase text-sm tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95"
+                >
+                  {saving ? 'Processando...' : 'Salvar Configuração'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Gestão de Profissionais */}
+      <AnimatePresence>
+        {manageProfessionalsModal && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-[32px] w-full max-w-2xl p-10 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="absolute top-0 left-0 w-full h-1 bg-brand opacity-50" />
+              <button onClick={() => setManageProfessionalsModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
+              
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
+                  <UserIcon size={28} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tight">Gestão de Profissionais</h2>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Controle de quem entra nos fechamentos e CRM</p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Válido Até (Mês)</label>
-                <div className="relative">
-                  <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                  <input type="month" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8">
+                <h3 className="text-xs font-black text-white uppercase tracking-widest mb-4">Novo Profissional</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <input 
+                    type="text" 
+                    placeholder="Nome Completo" 
+                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                    value={newProfessional.name}
+                    onChange={(e) => setNewProfessional({...newProfessional, name: e.target.value})}
+                  />
+                  <select 
+                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all appearance-none"
+                    value={newProfessional.unit_id}
+                    onChange={(e) => setNewProfessional({...newProfessional, unit_id: e.target.value})}
+                  >
+                    <option value="" className="bg-zinc-950">Selecione Unidade</option>
+                    {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
+                  </select>
+                  <button 
+                    onClick={async () => {
+                      if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
+                      const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
+                      if (error) return showNotification('error', error.message);
+                      setBarbers([...barbers, data[0]]);
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true });
+                      showNotification('success', 'Profissional adicionado!');
+                    }}
+                    className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all"
+                  >
+                    Adicionar
+                  </button>
                 </div>
               </div>
-              <div className="bg-brand/5 p-5 rounded-2xl border border-brand/10">
-                <p className="text-[11px] text-brand/80 leading-relaxed font-medium">
-                  <strong>Atenção:</strong> O sistema dividirá o valor pelo número de dias do mês e aplicará a fração na quinzena correspondente. O barbeiro receberá o maior valor entre a produção real e a garantia.
-                </p>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <table className="w-full text-left">
+                  <thead className="sticky top-0 bg-zinc-950 z-10">
+                    <tr className="border-b border-white/10">
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Unidade</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ocultar no CRM</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => (
+                      <tr key={b.id} className="group">
+                        <td className="py-4 text-sm font-bold text-white italic uppercase">{b.name}</td>
+                        <td className="py-4 text-xs text-zinc-500 font-bold">{units.find(u => u.id === b.unit_id)?.name}</td>
+                        <td className="py-4 text-center">
+                          <button 
+                            onClick={async () => {
+                              const newVal = !b.is_hidden_crm;
+                              const { error } = await supabase.from('previa_barbers').update({ is_hidden_crm: newVal }).eq('id', b.id);
+                              if (error) return showNotification('error', error.message);
+                              setBarbers(barbers.map(x => x.id === b.id ? {...x, is_hidden_crm: newVal} : x));
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all border ${b.is_hidden_crm ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
+                          >
+                            {b.is_hidden_crm ? '✅ Sim' : 'Não'}
+                          </button>
+                        </td>
+                        <td className="py-4 text-center">
+                          <button 
+                            onClick={async () => {
+                              if (!confirm(`Excluir ${b.name}?`)) return;
+                              const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
+                              if (error) return showNotification('error', error.message);
+                              setBarbers(barbers.filter(x => x.id !== b.id));
+                            }}
+                            className="p-2 text-zinc-700 hover:text-brand transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <button 
-                onClick={saveGuarantee} 
-                disabled={saving} 
-                className="w-full mt-2 bg-brand text-white py-5 rounded-2xl font-display font-black italic uppercase text-sm tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95"
-              >
-                {saving ? 'Processando...' : 'Salvar Configuração'}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

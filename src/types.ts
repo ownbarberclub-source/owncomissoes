@@ -7,6 +7,9 @@ export interface Barber {
   id: string;
   unit_id: string;
   name: string;
+  nickname?: string;
+  photo_url?: string;
+  is_hidden_crm?: boolean;
 }
 
 export interface BarberGuarantee {
