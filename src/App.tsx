@@ -471,11 +471,11 @@ function App() {
                   ) : (
                     barbers.map(barber => (
                       <div key={barber.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-xl">
-                        <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity">
+                        <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none">
                           <CreditCard className="text-white" size={64} />
                         </div>
                         
-                        <div className="mb-6 flex justify-between items-start">
+                        <div className="mb-6 flex justify-between items-start relative z-10">
                           <div>
                             <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
                             <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
@@ -486,7 +486,7 @@ function App() {
                               const g = guarantees[barber.id];
                               setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
                             }}
-                            className="p-2 bg-zinc-950 text-zinc-500 hover:text-brand border border-zinc-800 rounded-xl transition-all"
+                            className="p-2 bg-zinc-950 text-zinc-500 hover:text-brand border border-zinc-800 rounded-xl transition-all relative z-20 cursor-pointer"
                             title="Configurar Garantia"
                           >
                             <Settings size={16} />
