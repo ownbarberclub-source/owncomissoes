@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, Cycle, CommissionRecord, Voucher, UserSession } from './types';
 import { 
-  Scissors, 
   Save, 
   CreditCard, 
   History, 
@@ -14,8 +13,7 @@ import {
   DollarSign,
   CalendarDays,
   Store,
-  Wallet,
-  Lock as LockIcon
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
