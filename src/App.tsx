@@ -415,7 +415,7 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl relative" ref={unitDropdownRef}>
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl relative z-[60]" ref={unitDropdownRef}>
             <div className="flex items-center gap-2 text-zinc-500">
               <Store size={16} className="group-hover:text-brand transition-colors" />
               <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Unidade</label>
