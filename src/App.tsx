@@ -3,7 +3,6 @@ import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
   Save, 
-  CreditCard, 
   History, 
   LogOut, 
   Plus, 
