@@ -135,6 +135,7 @@ function App() {
     if (!selectedUnit) return;
     async function fetchBarbers() {
       const { data, error } = await supabase.from('previa_barbers').select('*').eq('unit_id', selectedUnit);
+      if (error) console.error('Error fetching barbers:', error);
       if (data) {
         setBarbers(data);
         if (selectedPeriod) loadExistingData(data);
