@@ -327,6 +327,55 @@ function App() {
     }
   };
 
+  const handleSaveIndividual = async (barberId: string, allIds: string[]) => {
+    if (!selectedPeriod) return;
+    setSaving(true);
+    try {
+      const commToSave = allIds.map(id => {
+        const c = commissions[id];
+        return {
+          unit_id: c?.unit_id || barbers.find(b => b.id === id)?.unit_id,
+          period: selectedPeriod,
+          barber_id: id,
+          quinzena_1: c?.quinzena_1 || 0,
+          quinzena_2_avulso: c?.quinzena_2_avulso || 0,
+          mes_assinatura: c?.mes_assinatura || 0,
+          status_q1: c?.status_q1 || 'pending',
+          status_q2: c?.status_q2 || 'pending',
+          updated_at: new Date().toISOString()
+        };
+      });
+
+      const { error: commError } = await supabase.from('previa_manual_payments').upsert(commToSave, { onConflict: 'barber_id,period' });
+      if (commError) throw commError;
+
+      // Update vouchers for these specific barbers
+      const { error: delError } = await supabase.from('previa_barber_vouchers').delete()
+        .eq('period', selectedPeriod).in('barber_id', allIds);
+      if (delError) throw delError;
+
+      const barberVouchers = vouchers.filter(v => allIds.includes(v.barber_id));
+      if (barberVouchers.length > 0) {
+        const vouchersToSave = barberVouchers.map(v => ({
+          barber_id: v.barber_id,
+          period: selectedPeriod,
+          value: parseFloat(v.value as any) || 0,
+          description: v.description,
+          deduct_from: v.deduct_from,
+          date: v.date
+        }));
+        const { error: vouchError } = await supabase.from('previa_barber_vouchers').insert(vouchersToSave);
+        if (vouchError) throw vouchError;
+      }
+
+      showNotification('success', `Dados de ${barbers.find(b => b.id === barberId)?.name} salvos!`);
+    } catch (error: any) {
+      showNotification('error', `Erro: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleExpand = (barberId: string) => {
     if (expandedBarbers.includes(barberId)) setExpandedBarbers(prev => prev.filter(id => id !== barberId));
     else setExpandedBarbers(prev => [...prev, barberId]);
@@ -397,7 +446,14 @@ function App() {
                </h1>
             </div>
           </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleSave}
+                disabled={saving || isUnifiedView}
+                className={`hidden lg:flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${saving ? 'bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed' : 'bg-brand hover:bg-brand-light text-white border-brand shadow-lg shadow-brand/20 active:scale-95'}`}
+              >
+                <Save size={14} /> {saving ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
               {isAdmin && (
                 <button 
                   onClick={() => setManageProfessionalsModal(true)}
@@ -619,26 +675,34 @@ function App() {
                                   </div>
                                 </td>
                                 <td className="p-6 align-top text-center">
-                                  <div className="flex flex-col items-center gap-4">
+                                  <div className="flex flex-col items-center gap-3">
+                                    <button 
+                                      onClick={() => handleSaveIndividual(barber.id, barber.all_ids)}
+                                      disabled={saving || isUnifiedView}
+                                      className={`w-full p-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${saving ? 'bg-zinc-800 text-zinc-600 border-zinc-700' : 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500/50 shadow-lg shadow-emerald-500/20 active:scale-95'}`}
+                                    >
+                                      <Save size={18} /> {saving ? '...' : 'Salvar'}
+                                    </button>
+
                                     <button 
                                       onClick={() => {
                                         setSettingsModalBarber(barber.id);
                                         const g = guarantees[barber.id];
                                         setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
                                       }}
-                                      className="w-full p-4 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                                      className="w-full p-3 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
                                       title="Configurar Garantia"
                                     >
-                                      <Settings size={18} /> <span className="text-xs font-black uppercase tracking-widest">Garantia</span>
+                                      <Settings size={16} /> <span className="text-[10px] font-black uppercase tracking-widest">Garantia</span>
                                     </button>
                                     
                                     <button 
                                       onClick={() => toggleExpand(barber.id)}
-                                      className={`w-full p-4 border rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30 shadow-[0_0_20px_rgba(225,6,0,0.1)]' : 'bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10'}`}
+                                      className={`w-full p-3 border rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30' : 'bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10'}`}
                                     >
-                                      <Wallet size={18} /> 
+                                      <Wallet size={16} /> 
                                       {barberVouchers.length > 0 ? `${barberVouchers.length} Vales` : 'Add Vale'}
-                                      {isExpanded ? <ChevronUp size={18}/> : <ChevronDown size={18}/>}
+                                      {isExpanded ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
                                     </button>
                                   </div>
                                 </td>
@@ -757,6 +821,40 @@ function App() {
             <div>
               <p className="font-bold text-[13px] uppercase tracking-wider font-display italic">{notification.type === 'success' ? 'Sucesso' : 'Erro'}</p>
               <p className="text-xs opacity-80">{notification.message}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Save Button */}
+      {!isUnifiedView && (
+        <motion.div 
+          initial={{ y: 100 }} 
+          animate={{ y: 0 }} 
+          className="fixed bottom-8 right-8 z-50 lg:hidden"
+        >
+          <button 
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-black italic uppercase text-sm tracking-widest transition-all shadow-2xl ${saving ? 'bg-zinc-800 text-zinc-500' : 'bg-brand text-white hover:bg-brand-light active:scale-95 shadow-brand/40'}`}
+          >
+            <Save size={20} /> {saving ? 'Sincronizando...' : 'Salvar Tudo'}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-6"
+          >
+            <div className={`p-5 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-4 ${notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-brand/10 border-brand/30 text-brand'}`}>
+              {notification.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+              <p className="text-sm font-black uppercase tracking-widest">{notification.message}</p>
             </div>
           </motion.div>
         )}
