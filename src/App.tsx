@@ -361,64 +361,77 @@ function App() {
   const isUnifiedView = selectedUnit === 'all';
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-brand/30">
-      <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
+    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-brand/30 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div 
+          className="absolute inset-0 opacity-40"
+          style={{ background: 'radial-gradient(circle at 50% -20%, rgba(225,6,0,0.15) 0%, rgba(0,0,0,0) 70%)' }}
+        />
+        <div className="absolute inset-0 bg-grid opacity-20" />
+      </div>
+
+      <header className="bg-black/60 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 p-1.5 shadow-lg flex items-center justify-center">
+               <div className="w-10 h-10 bg-white/5 rounded-xl overflow-hidden border border-white/10 p-1.5 shadow-lg flex items-center justify-center">
                   <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
                </div>
-               <h1 className="text-xl font-black tracking-tighter text-zinc-100 hidden sm:block uppercase italic">
+               <h1 className="text-xl font-display font-black tracking-tighter text-white hidden sm:block uppercase italic">
                  OWN <span className="text-brand">COMISSÕES</span>
                </h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex flex-col items-end">
-              <p className="text-sm font-black text-zinc-200 flex items-center gap-2">
+              <p className="text-sm font-display font-black text-white flex items-center gap-2 italic uppercase">
                 {isAdmin ? <ShieldCheck size={14} className="text-brand" /> : <UserIcon size={14} className="text-zinc-500" />}
                 {session.name}
               </p>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{session.role}</p>
             </div>
-            <button onClick={() => { localStorage.removeItem('@own-comissoes:session'); setSession(null); }} className="p-2.5 text-zinc-500 hover:text-brand hover:bg-brand/10 rounded-xl transition-all">
+            <button 
+              onClick={() => { localStorage.removeItem('@own-comissoes:session'); setSession(null); }} 
+              className="p-2.5 text-zinc-500 hover:text-brand hover:bg-brand/10 rounded-xl transition-all border border-transparent hover:border-brand/10"
+            >
               <LogOut size={20} />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-2 group hover:border-zinc-700 transition-all">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex flex-col gap-2 group hover:border-brand/30 transition-all shadow-xl">
             <div className="flex items-center gap-2 text-zinc-500">
               <Store size={14} className="group-hover:text-brand transition-colors" />
-              <label className="text-[10px] font-black uppercase tracking-widest">Unidade</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Unidade</label>
             </div>
-            <select className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
-              <option value="" className="bg-zinc-900">Selecione uma unidade</option>
-              <option value="all" className="bg-zinc-900 font-bold text-brand">🌟 TODAS AS UNIDADES (UNIFICADO)</option>
-              {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-900">{u.name}</option>)}
+            <select className="bg-transparent text-lg font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
+              <option value="" className="bg-zinc-950">Selecione uma unidade</option>
+              <option value="all" className="bg-zinc-950 font-black text-brand italic uppercase">🌟 Todas as Unidades (Unificado)</option>
+              {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
             </select>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-2 group hover:border-zinc-700 transition-all">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex flex-col gap-2 group hover:border-brand/30 transition-all shadow-xl">
             <div className="flex items-center gap-2 text-zinc-500">
               <CalendarDays size={14} className="group-hover:text-brand transition-colors" />
-              <label className="text-[10px] font-black uppercase tracking-widest">Mês de Referência</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Mês de Referência</label>
             </div>
-            <input type="month" className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
+            <input type="month" className="bg-transparent text-lg font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
           </div>
         </div>
 
         {isUnifiedView && (
-          <div className="bg-brand/10 border border-brand/20 p-5 rounded-2xl flex items-start gap-4">
+          <div className="bg-brand/10 border border-brand/20 p-5 rounded-2xl flex items-start gap-4 backdrop-blur-md animate-fade-in">
             <AlertCircle className="text-brand shrink-0 mt-0.5" size={20} />
             <div>
-              <h3 className="font-bold text-brand mb-1">Visão Unificada (Leitura e Fechamento)</h3>
-              <p className="text-sm text-zinc-400">
+              <h3 className="font-display font-black italic uppercase text-brand mb-1">Visão Unificada (Leitura e Fechamento)</h3>
+              <p className="text-xs font-medium text-zinc-400 leading-relaxed">
                 Nesta tela os valores dos barbeiros de múltiplas unidades estão <strong>somados</strong>. 
-                Os campos de digitação estão bloqueados para proteger os dados individuais. Use esta tela para conferir a Garantia global, adicionar vales e realizar a baixa do pagamento (botão Pendente/Pago).
+                Os campos de digitação estão bloqueados para proteger os dados individuais. Use esta tela para conferir a Garantia global, adicionar vales e realizar a baixa do pagamento.
               </p>
             </div>
           </div>
@@ -427,21 +440,21 @@ function App() {
         <div className="relative">
           {selectedUnit ? (
             <AnimatePresence mode="wait">
-              <motion.div key="comm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl overflow-hidden">
+              <motion.div key="comm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
                 {groupedBarbers.length === 0 ? (
-                  <div className="py-12 text-center"><p className="text-zinc-500">Nenhum barbeiro encontrado.</p></div>
+                  <div className="py-20 text-center"><p className="text-zinc-500 font-medium">Nenhum barbeiro encontrado.</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                       <thead>
-                        <tr className="bg-zinc-950/50 border-b border-zinc-800">
+                        <tr className="bg-white/5 border-b border-white/10">
                           <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
                           <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-64">Quinzena 1</th>
                           <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-96">Quinzena 2</th>
                           <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-32 text-center">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-800/50">
+                      <tbody className="divide-y divide-white/5">
                         {groupedBarbers.map(barber => {
                           const isExpanded = expandedBarbers.includes(barber.id);
                           const sums = getUnifiedSums(barber.all_ids);
@@ -454,45 +467,45 @@ function App() {
 
                           return (
                             <React.Fragment key={barber.id}>
-                              <tr className="hover:bg-zinc-800/20 transition-colors group">
+                              <tr className="hover:bg-white/[0.02] transition-colors group">
                                 <td className="p-5 align-top">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase shadow-inner">
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-sm uppercase shadow-inner group-hover:border-brand/30 transition-all">
                                       {barber.name.substring(0, 2)}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-black text-white group-hover:text-brand transition-colors">{barber.name}</p>
-                                      <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">
+                                      <p className="text-sm font-display font-black text-white group-hover:text-brand transition-colors italic uppercase">{barber.name}</p>
+                                      <p className="text-[10px] text-zinc-500 font-bold mt-0.5 uppercase tracking-wider">
                                         {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
                                       </p>
                                     </div>
                                   </div>
                                 </td>
                                 
-                                <td className="p-5 align-top bg-zinc-900/30">
-                                  <div className="space-y-3">
+                                <td className="p-5 align-top bg-white/[0.01]">
+                                  <div className="space-y-4">
                                     <div>
-                                      <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto (Dia 01-15)</label>
+                                      <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto (Dia 01-15)</label>
                                       <div className="relative">
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                         <input 
                                           type="number"
                                           disabled={isUnifiedView}
-                                          className={`w-full border rounded-xl py-2 pl-9 pr-3 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50 focus:ring-1 focus:ring-brand/20'}`}
+                                          className={`w-full border rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50 focus:ring-1 focus:ring-brand/20'}`}
                                           placeholder="0,00"
                                           value={isUnifiedView ? sums.sumQ1 : (commissions[barber.id]?.quinzena_1 === 0 ? '' : commissions[barber.id]?.quinzena_1)}
                                           onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', parseFloat(e.target.value) || 0)}
                                         />
                                       </div>
                                     </div>
-                                    <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
-                                      <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[10px] font-black uppercase text-zinc-500">Líquido A Pagar</span>
-                                        <span className={`text-sm font-black ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
+                                    <div className="bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
+                                        <span className={`text-base font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
-                                        className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                                        className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
                                       >
                                         {statusQ1 === 'paid' ? '✅ Já Pago' : 'Pendente'}
                                       </button>
@@ -501,16 +514,16 @@ function App() {
                                 </td>
 
                                 <td className="p-5 align-top">
-                                  <div className="space-y-3">
-                                    <div className="flex gap-2">
+                                  <div className="space-y-4">
+                                    <div className="flex gap-3">
                                       <div className="flex-1">
-                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto Avulso (16-Fim)</label>
+                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto Avulso (16-Fim)</label>
                                         <div className="relative">
-                                          <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                           <input 
                                             type="number"
                                             disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50'}`}
+                                            className={`w-full border rounded-xl py-2.5 pl-8 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
                                             placeholder="0"
                                             value={isUnifiedView ? sums.sumQ2 : (commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
@@ -518,13 +531,13 @@ function App() {
                                         </div>
                                       </div>
                                       <div className="flex-1">
-                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto Assinaturas</label>
+                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1.5 block tracking-widest">Bruto Assinaturas</label>
                                         <div className="relative">
-                                          <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                           <input 
                                             type="number"
                                             disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50'}`}
+                                            className={`w-full border rounded-xl py-2.5 pl-8 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
                                             placeholder="0"
                                             value={isUnifiedView ? sums.sumAssin : (commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
@@ -532,14 +545,14 @@ function App() {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
-                                      <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[10px] font-black uppercase text-zinc-500">Líquido A Pagar</span>
-                                        <span className={`text-sm font-black ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
+                                    <div className="bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
+                                        <span className={`text-base font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
-                                        className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                                        className={`w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
                                       >
                                         {statusQ2 === 'paid' ? '✅ Já Pago' : 'Pendente'}
                                       </button>
@@ -548,22 +561,22 @@ function App() {
                                 </td>
 
                                 <td className="p-5 align-top text-center">
-                                  <div className="flex flex-col items-center gap-2">
+                                  <div className="flex flex-col items-center gap-3">
                                     <button 
                                       onClick={() => {
                                         setSettingsModalBarber(barber.id);
                                         const g = guarantees[barber.id];
                                         setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
                                       }}
-                                      className="w-full p-2.5 bg-zinc-950 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-zinc-800 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                                      className="w-full p-3 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
                                       title="Configurar Garantia"
                                     >
-                                      <Settings size={14} /> <span className="text-[10px] font-black uppercase">Garantia</span>
+                                      <Settings size={14} /> <span className="text-[10px] font-black uppercase tracking-widest">Garantia</span>
                                     </button>
                                     
                                     <button 
                                       onClick={() => toggleExpand(barber.id)}
-                                      className={`w-full p-2.5 border rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30' : 'bg-zinc-950 text-zinc-500 border-zinc-800 hover:bg-zinc-800'}`}
+                                      className={`w-full p-3 border rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30 shadow-[0_0_20px_rgba(225,6,0,0.1)]' : 'bg-white/5 text-zinc-500 border-white/10 hover:bg-white/10'}`}
                                     >
                                       <Wallet size={14} /> 
                                       {barberVouchers.length > 0 ? `${barberVouchers.length} Vales` : 'Add Vale'}
@@ -580,44 +593,54 @@ function App() {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="bg-zinc-950/80 border-b-4 border-zinc-900"
+                                    className="bg-black/60 border-b-4 border-black shadow-inner"
                                   >
-                                    <td colSpan={4} className="p-6">
-                                      <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-sm font-black text-brand uppercase tracking-widest flex items-center gap-2"><Wallet size={16}/> Gestão de Vales e Adiantamentos</h4>
-                                        <button onClick={() => addVoucher(barber.id)} className="flex items-center gap-2 text-brand hover:text-brand-light transition-all text-[10px] font-black uppercase tracking-widest bg-brand/10 px-3 py-1.5 rounded-lg">
+                                    <td colSpan={4} className="p-8">
+                                      <div className="flex items-center justify-between mb-6">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 rounded-xl bg-brand/10 flex items-center justify-center text-brand">
+                                            <Wallet size={20}/>
+                                          </div>
+                                          <div>
+                                            <h4 className="text-sm font-display font-black text-white italic uppercase tracking-wider">Gestão de Vales e Adiantamentos</h4>
+                                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Descontos diretos na comissão líquida</p>
+                                          </div>
+                                        </div>
+                                        <button onClick={() => addVoucher(barber.id)} className="flex items-center gap-2 text-white bg-brand hover:bg-brand-light transition-all text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-lg shadow-brand/20">
                                           <Plus size={14} /> Novo Vale
                                         </button>
                                       </div>
                                       
                                       {barberVouchers.length === 0 ? (
-                                        <p className="text-xs text-zinc-500 italic">Nenhum vale lançado para este barbeiro neste mês.</p>
+                                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 text-center">
+                                          <p className="text-xs text-zinc-600 font-medium italic">Nenhum vale lançado para este barbeiro neste mês.</p>
+                                        </div>
                                       ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                           {barberVouchers.map((v, idx) => {
                                             const globalIdx = vouchers.indexOf(v);
                                             return (
-                                              <div key={idx} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col gap-3">
-                                                <div className="flex gap-3">
+                                              <div key={idx} className="bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col gap-4 shadow-xl hover:border-brand/20 transition-all">
+                                                <div className="flex gap-4">
                                                   <div className="flex-1">
-                                                    <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Descrição</label>
-                                                    <input type="text" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-white text-xs outline-none" placeholder="Ex: Adiantamento" value={v.description} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].description = e.target.value; setVouchers(updated); }} />
+                                                    <label className="text-[9px] font-black text-zinc-500 uppercase mb-1.5 block tracking-widest">Descrição</label>
+                                                    <input type="text" className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-white text-xs outline-none focus:border-brand/50 transition-all" placeholder="Ex: Adiantamento" value={v.description} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].description = e.target.value; setVouchers(updated); }} />
                                                   </div>
-                                                  <div className="w-24">
-                                                    <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Valor (R$)</label>
-                                                    <input type="number" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-white text-xs font-bold outline-none" placeholder="0" value={v.value || ''} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].value = parseFloat(e.target.value) || 0; setVouchers(updated); }} />
+                                                  <div className="w-28">
+                                                    <label className="text-[9px] font-black text-zinc-500 uppercase mb-1.5 block tracking-widest">Valor (R$)</label>
+                                                    <input type="number" className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-white text-xs font-bold outline-none focus:border-brand/50 transition-all" placeholder="0" value={v.value || ''} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].value = parseFloat(e.target.value) || 0; setVouchers(updated); }} />
                                                   </div>
                                                 </div>
-                                                <div className="flex items-center justify-between mt-1">
-                                                  <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
-                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q1'; setVouchers(updated); }} className={`px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all ${v.deduct_from === 'q1' ? 'bg-brand text-white' : 'text-zinc-500 hover:bg-zinc-800'}`}>
-                                                      Descontar Q1
+                                                <div className="flex items-center justify-between">
+                                                  <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/5">
+                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q1'; setVouchers(updated); }} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${v.deduct_from === 'q1' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                                                      Q1
                                                     </button>
-                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q2'; setVouchers(updated); }} className={`px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all ${v.deduct_from === 'q2' ? 'bg-brand text-white' : 'text-zinc-500 hover:bg-zinc-800'}`}>
-                                                      Descontar Q2
+                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q2'; setVouchers(updated); }} className={`px-3 py-1.5 text-[9px] font-black uppercase rounded-lg transition-all ${v.deduct_from === 'q2' ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                                                      Q2
                                                     </button>
                                                   </div>
-                                                  <button onClick={() => setVouchers(vouchers.filter((_, i) => i !== globalIdx))} className="p-1.5 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Excluir Vale">
+                                                  <button onClick={() => setVouchers(vouchers.filter((_, i) => i !== globalIdx))} className="p-2 text-zinc-600 hover:text-brand hover:bg-brand/10 rounded-xl transition-all" title="Excluir Vale">
                                                     <Trash2 size={16} />
                                                   </button>
                                                 </div>
@@ -640,11 +663,12 @@ function App() {
               </motion.div>
             </AnimatePresence>
           ) : (
-            <div className="bg-zinc-900/50 border-2 border-dashed border-zinc-800 rounded-[40px] p-24 text-center">
-              <div className="w-24 h-24 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-zinc-800">
-                <AlertCircle className="text-zinc-600" size={48} />
+            <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-[40px] p-24 text-center backdrop-blur-sm">
+              <div className="w-24 h-24 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-brand/10">
+                <AlertCircle className="text-brand opacity-40" size={48} />
               </div>
-              <h2 className="text-2xl font-black text-white mb-3">Selecione uma unidade para começar</h2>
+              <h2 className="text-2xl font-display font-black text-white mb-3 italic uppercase">Selecione uma unidade para começar</h2>
+              <p className="text-zinc-500 max-w-sm mx-auto text-sm">Escolha no topo a unidade desejada ou a visão unificada para visualizar os fechamentos.</p>
             </div>
           )}
         </div>
@@ -653,8 +677,16 @@ function App() {
       {selectedUnit && (
         <div className="fixed bottom-10 inset-x-0 flex justify-center z-50 pointer-events-none">
           <div className="pointer-events-auto">
-            <button onClick={handleSave} disabled={saving} className={`flex items-center gap-3 px-10 py-5 rounded-[24px] text-base font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${saving ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-brand text-white hover:bg-brand-light shadow-brand/40'}`}>
-              {saving ? <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><History size={24} /></motion.div>Salvando...</> : <><Save size={24} /> Salvar Alterações</>}
+            <button 
+              onClick={handleSave} 
+              disabled={saving} 
+              className={`group flex items-center gap-3 px-12 py-5 rounded-[24px] text-base font-display font-black italic uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${saving ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-brand text-white hover:bg-brand-light shadow-brand/40 hover:-translate-y-1'}`}
+            >
+              {saving ? (
+                <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><History size={24} /></motion.div>Salvando...</>
+              ) : (
+                <><Save size={24} className="group-hover:scale-110 transition-transform" /> Salvar Alterações</>
+              )}
             </button>
           </div>
         </div>
@@ -662,35 +694,61 @@ function App() {
 
       <AnimatePresence>
         {notification && (
-          <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className={`fixed top-24 right-8 z-[100] px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl border ${notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-brand/10 border-brand/20 text-brand'}`}>
-            {notification.type === 'success' ? <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center"><CheckCircle2 size={20} /></div> : <div className="w-8 h-8 bg-brand/20 rounded-full flex items-center justify-center"><AlertCircle size={20} /></div>}
-            <p className="font-bold text-sm">{notification.message}</p>
+          <motion.div initial={{ opacity: 0, x: 100, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 100, scale: 0.9 }} className={`fixed top-24 right-8 z-[100] px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl border backdrop-blur-xl ${notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-brand/10 border-brand/20 text-brand'}`}>
+            {notification.type === 'success' ? <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20"><CheckCircle2 size={20} /></div> : <div className="w-10 h-10 bg-brand/20 rounded-full flex items-center justify-center shadow-lg shadow-brand/20"><AlertCircle size={20} /></div>}
+            <div>
+              <p className="font-bold text-[13px] uppercase tracking-wider font-display italic">{notification.type === 'success' ? 'Sucesso' : 'Erro'}</p>
+              <p className="text-xs opacity-80">{notification.message}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {settingsModalBarber && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
-            <button onClick={() => setSettingsModalBarber(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
-            <h2 className="text-xl font-black text-white mb-6">Garantia Prometida</h2>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-[32px] w-full max-w-md p-10 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-brand opacity-50" />
+            <button onClick={() => setSettingsModalBarber(null)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
+            
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tight">Garantia Prometida</h2>
+                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Configuração de produção mínima</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-black text-zinc-500 uppercase">Valor Total do Mês (R$)</label>
-                <input type="number" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none" placeholder="Ex: 3000" value={tempGuarantee.value} onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))} />
+                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Valor Total do Mês (R$)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                  <input type="number" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all text-lg" placeholder="Ex: 3000" value={tempGuarantee.value} onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))} />
+                </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-zinc-500 uppercase">Válido Até (Mês)</label>
-                <input type="month" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
+                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Válido Até (Mês)</label>
+                <div className="relative">
+                  <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                  <input type="month" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
+                </div>
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-zinc-800/50">
-                O sistema dividirá o valor pelo número de dias do mês atual e aplicará a fração na hora de salvar, sempre escolhendo o maior valor (digitado vs garantia). Deixe em branco para desativar.
-              </p>
-              <button onClick={saveGuarantee} disabled={saving} className="w-full mt-4 bg-brand text-white py-4 rounded-xl font-black uppercase text-sm hover:bg-brand-light transition-all">
-                {saving ? 'Salvando...' : 'Salvar Garantia'}
+              <div className="bg-brand/5 p-5 rounded-2xl border border-brand/10">
+                <p className="text-[11px] text-brand/80 leading-relaxed font-medium">
+                  <strong>Atenção:</strong> O sistema dividirá o valor pelo número de dias do mês e aplicará a fração na quinzena correspondente. O barbeiro receberá o maior valor entre a produção real e a garantia.
+                </p>
+              </div>
+              <button 
+                onClick={saveGuarantee} 
+                disabled={saving} 
+                className="w-full mt-2 bg-brand text-white py-5 rounded-2xl font-display font-black italic uppercase text-sm tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95"
+              >
+                {saving ? 'Processando...' : 'Salvar Configuração'}
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
     </div>
