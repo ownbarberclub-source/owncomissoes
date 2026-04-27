@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, Cycle, CommissionRecord, Voucher, UserSession } from './types';
-import Logo from './assets/logo.png';
 import { 
   Scissors, 
   Save, 
@@ -63,13 +62,20 @@ function App() {
     if (!session) return;
 
     async function fetchData() {
-      const { data: unitsData } = await supabase.from('previa_units').select('*');
-      const { data: cyclesData } = await supabase.from('previa_cycles').select('*').order('created_at', { ascending: false });
+      try {
+        const { data: unitsData, error: unitsError } = await supabase.from('previa_units').select('*');
+        const { data: cyclesData, error: cyclesError } = await supabase.from('previa_cycles').select('*').order('created_at', { ascending: false });
 
-      if (unitsData) setUnits(unitsData);
-      if (cyclesData) {
-        setCycles(cyclesData);
-        if (cyclesData.length > 0) setSelectedCycle(cyclesData[0].id);
+        if (unitsError) console.error('Error fetching units:', unitsError);
+        if (cyclesError) console.error('Error fetching cycles:', cyclesError);
+
+        if (unitsData) setUnits(unitsData);
+        if (cyclesData) {
+          setCycles(cyclesData);
+          if (cyclesData.length > 0) setSelectedCycle(cyclesData[0].id);
+        }
+      } catch (err) {
+        console.error('Fetch initial data failed:', err);
       }
     }
 
@@ -116,10 +122,12 @@ function App() {
     if (!selectedUnit) return;
 
     async function fetchBarbers() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('previa_barbers')
         .select('*')
         .eq('unit_id', selectedUnit);
+      
+      if (error) console.error('Error fetching barbers:', error);
       
       if (data) {
         setBarbers(data);
@@ -231,7 +239,7 @@ function App() {
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
         <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-10 text-center shadow-2xl">
           <div className="w-20 h-20 bg-zinc-950 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-zinc-800 p-4">
-            <img src={Logo} alt="OWN Logo" className="w-full h-full object-contain brightness-0 invert" />
+            <img src="/logo.png" alt="OWN Logo" className="w-full h-full object-contain brightness-0 invert" />
           </div>
           <h1 className="text-2xl font-black text-white mb-4 tracking-tight uppercase italic">Acesso Restrito</h1>
           <p className="text-zinc-400 mb-8 leading-relaxed">
@@ -255,7 +263,7 @@ function App() {
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
                <div className="w-10 h-10 bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 p-1.5 shadow-lg flex items-center justify-center">
-                  <img src={Logo} alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
+                  <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
                </div>
                <h1 className="text-xl font-black tracking-tighter text-zinc-100 hidden sm:block uppercase italic">
                  OWN <span className="text-brand">COMISSÕES</span>
@@ -346,68 +354,74 @@ function App() {
                   exit={{ opacity: 0, y: -10 }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {barbers.map(barber => (
-                    <div key={barber.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-xl">
-                      <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity">
-                        <CreditCard className="text-white" size={64} />
-                      </div>
-                      
-                      <div className="mb-6">
-                        <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
-                        <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
-                      </div>
-
-                      <div className="space-y-5">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                            <span className="w-1 h-1 bg-brand rounded-full" /> Período 01-15
-                          </label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                            <input 
-                              type="number"
-                              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                              placeholder="0,00"
-                              value={commissions[barber.id]?.quinzena_1 || ''}
-                              onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                            <span className="w-1 h-1 bg-brand rounded-full" /> 16-Fim (Avulsos)
-                          </label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                            <input 
-                              type="number"
-                              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                              placeholder="0,00"
-                              value={commissions[barber.id]?.quinzena_2_avulso || ''}
-                              onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                            <span className="w-1 h-1 bg-brand rounded-full" /> Assinaturas (Mês)
-                          </label>
-                          <div className="relative">
-                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                            <input 
-                              type="number"
-                              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                              placeholder="0,00"
-                              value={commissions[barber.id]?.mes_assinatura || ''}
-                              onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </div>
+                  {barbers.length === 0 ? (
+                    <div className="col-span-full py-12 text-center bg-zinc-900 border border-zinc-800 rounded-3xl">
+                      <p className="text-zinc-500">Nenhum barbeiro encontrado para esta unidade.</p>
                     </div>
-                  ))}
+                  ) : (
+                    barbers.map(barber => (
+                      <div key={barber.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-xl">
+                        <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity">
+                          <CreditCard className="text-white" size={64} />
+                        </div>
+                        
+                        <div className="mb-6">
+                          <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
+                          <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
+                        </div>
+
+                        <div className="space-y-5">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                              <span className="w-1 h-1 bg-brand rounded-full" /> Período 01-15
+                            </label>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                              <input 
+                                type="number"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
+                                placeholder="0,00"
+                                value={commissions[barber.id]?.quinzena_1 || ''}
+                                onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                              <span className="w-1 h-1 bg-brand rounded-full" /> 16-Fim (Avulsos)
+                            </label>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                              <input 
+                                type="number"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
+                                placeholder="0,00"
+                                value={commissions[barber.id]?.quinzena_2_avulso || ''}
+                                onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                              <span className="w-1 h-1 bg-brand rounded-full" /> Assinaturas (Mês)
+                            </label>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                              <input 
+                                type="number"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
+                                placeholder="0,00"
+                                value={commissions[barber.id]?.mes_assinatura || ''}
+                                onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </motion.div>
               ) : (
                 <motion.div 
