@@ -49,3 +49,15 @@ CREATE TABLE IF NOT EXISTS previa_barber_vouchers (
 ALTER TABLE previa_barber_vouchers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso total para todos" ON previa_barber_vouchers;
 CREATE POLICY "Acesso total para todos" ON previa_barber_vouchers FOR ALL USING (true);
+
+-- 4. Tabela de Garantias (Valor Prometido)
+CREATE TABLE IF NOT EXISTS previa_barber_guarantees (
+  barber_id UUID PRIMARY KEY REFERENCES previa_barbers(id) ON DELETE CASCADE,
+  guarantee_value NUMERIC DEFAULT 0, -- Valor total mensal (Ex: 3000)
+  valid_until TEXT -- Ex: '2025-07' (formato YYYY-MM para facilitar)
+);
+
+ALTER TABLE previa_barber_guarantees ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Acesso total para todos" ON previa_barber_guarantees;
+CREATE POLICY "Acesso total para todos" ON previa_barber_guarantees FOR ALL USING (true);
+

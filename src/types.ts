@@ -9,6 +9,12 @@ export interface Barber {
   name: string;
 }
 
+export interface BarberGuarantee {
+  barber_id: string;
+  guarantee_value: number;
+  valid_until: string; // YYYY-MM
+}
+
 export interface CommissionRecord {
   barber_id: string;
   quinzena_1: number;

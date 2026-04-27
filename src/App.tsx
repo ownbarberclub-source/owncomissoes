@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
-import type { Unit, Barber, CommissionRecord, Voucher, UserSession } from './types';
+import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
   Save, 
   CreditCard, 
@@ -15,7 +15,9 @@ import {
   Store,
   Wallet,
   ShieldCheck,
-  User as UserIcon
+  User as UserIcon,
+  Settings,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,7 +29,10 @@ function App() {
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [commissions, setCommissions] = useState<Record<string, CommissionRecord>>({});
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [guarantees, setGuarantees] = useState<Record<string, BarberGuarantee>>({});
   const [activeTab, setActiveTab] = useState<'commissions' | 'vouchers'>('commissions');
+  const [settingsModalBarber, setSettingsModalBarber] = useState<string | null>(null);
+  const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string}>({value: '', until: ''});
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
@@ -150,6 +155,19 @@ function App() {
     if (voucherData) {
       setVouchers(voucherData);
     }
+
+    const { data: guarData } = await supabase
+      .from('previa_barber_guarantees')
+      .select('*')
+      .in('barber_id', barberList.map(b => b.id));
+
+    if (guarData) {
+      const gMap: Record<string, BarberGuarantee> = {};
+      guarData.forEach(g => {
+        gMap[g.barber_id] = g;
+      });
+      setGuarantees(gMap);
+    }
   };
 
   useEffect(() => {
@@ -183,6 +201,55 @@ function App() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const getDaysInMonth = (period: string) => {
+    if (!period) return 30;
+    const [year, month] = period.split('-');
+    return new Date(parseInt(year), parseInt(month), 0).getDate();
+  };
+
+  const getGuaranteeForBarber = (barberId: string) => {
+    const g = guarantees[barberId];
+    if (!g || !g.valid_until || !g.guarantee_value) return null;
+    if (selectedPeriod > g.valid_until) return null; // Vencido
+
+    const totalDays = getDaysInMonth(selectedPeriod);
+    const q1 = (g.guarantee_value / totalDays) * 15;
+    const q2 = (g.guarantee_value / totalDays) * (totalDays - 15);
+    return { q1, q2 };
+  };
+
+  const saveGuarantee = async () => {
+    if (!settingsModalBarber) return;
+    setSaving(true);
+    try {
+      const gValue = parseFloat(tempGuarantee.value) || 0;
+      
+      if (gValue === 0 || !tempGuarantee.until) {
+         // Remove guarantee
+         await supabase.from('previa_barber_guarantees').delete().eq('barber_id', settingsModalBarber);
+         setGuarantees(prev => {
+            const next = {...prev};
+            delete next[settingsModalBarber];
+            return next;
+         });
+      } else {
+         const newG = {
+            barber_id: settingsModalBarber,
+            guarantee_value: gValue,
+            valid_until: tempGuarantee.until
+         };
+         await supabase.from('previa_barber_guarantees').upsert(newG);
+         setGuarantees(prev => ({...prev, [settingsModalBarber]: newG}));
+      }
+      showNotification('success', 'Garantia atualizada!');
+      setSettingsModalBarber(null);
+    } catch (e: any) {
+      showNotification('error', `Erro: ${e.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleCommissionChange = (barberId: string, field: keyof CommissionRecord, value: string) => {
     const numValue = parseFloat(value) || 0;
     setCommissions(prev => ({
@@ -199,15 +266,21 @@ function App() {
     setSaving(true);
 
     try {
-      const commToSave = Object.values(commissions).map(c => ({
-        unit_id: selectedUnit,
-        period: selectedPeriod,
-        barber_id: c.barber_id,
-        quinzena_1: c.quinzena_1,
-        quinzena_2_avulso: c.quinzena_2_avulso,
-        mes_assinatura: c.mes_assinatura,
-        updated_at: new Date().toISOString()
-      }));
+      const commToSave = Object.values(commissions).map(c => {
+        const guar = getGuaranteeForBarber(c.barber_id);
+        const finalQ1 = guar ? Math.max(c.quinzena_1, guar.q1) : c.quinzena_1;
+        const finalQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2) : c.quinzena_2_avulso;
+
+        return {
+          unit_id: selectedUnit,
+          period: selectedPeriod,
+          barber_id: c.barber_id,
+          quinzena_1: finalQ1,
+          quinzena_2_avulso: finalQ2,
+          mes_assinatura: c.mes_assinatura,
+          updated_at: new Date().toISOString()
+        };
+      });
 
       const { error: commError } = await supabase
         .from('previa_manual_payments')
@@ -402,9 +475,22 @@ function App() {
                           <CreditCard className="text-white" size={64} />
                         </div>
                         
-                        <div className="mb-6">
-                          <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
-                          <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
+                        <div className="mb-6 flex justify-between items-start">
+                          <div>
+                            <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
+                            <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setSettingsModalBarber(barber.id);
+                              const g = guarantees[barber.id];
+                              setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
+                            }}
+                            className="p-2 bg-zinc-950 text-zinc-500 hover:text-brand border border-zinc-800 rounded-xl transition-all"
+                            title="Configurar Garantia"
+                          >
+                            <Settings size={16} />
+                          </button>
                         </div>
 
                         <div className="space-y-5">
@@ -422,6 +508,9 @@ function App() {
                                 onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
                               />
                             </div>
+                            {getGuaranteeForBarber(barber.id) && (
+                              <p className="text-[10px] text-brand/80 mt-1">Garantia base: R$ {getGuaranteeForBarber(barber.id)?.q1.toFixed(2)}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -438,6 +527,9 @@ function App() {
                                 onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
                               />
                             </div>
+                            {getGuaranteeForBarber(barber.id) && (
+                              <p className="text-[10px] text-brand/80 mt-1">Garantia base: R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -607,6 +699,51 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {settingsModalBarber && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setSettingsModalBarber(null)}
+              className="absolute top-6 right-6 text-zinc-500 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            <h2 className="text-xl font-black text-white mb-6">Garantia Prometida</h2>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black text-zinc-500 uppercase">Valor Total do Mês (R$)</label>
+                <input 
+                  type="number"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none"
+                  placeholder="Ex: 3000"
+                  value={tempGuarantee.value}
+                  onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-zinc-500 uppercase">Válido Até (Mês)</label>
+                <input 
+                  type="month"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none"
+                  value={tempGuarantee.until}
+                  onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))}
+                />
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-zinc-800/50">
+                O sistema dividirá o valor pelo número de dias do mês atual e aplicará a fração na hora de salvar, sempre escolhendo o maior valor (digitado vs garantia). Deixe em branco para desativar.
+              </p>
+              <button 
+                onClick={saveGuarantee}
+                disabled={saving}
+                className="w-full mt-4 bg-brand text-white py-4 rounded-xl font-black uppercase text-sm hover:bg-brand-light transition-all"
+              >
+                {saving ? 'Salvando...' : 'Salvar Garantia'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
