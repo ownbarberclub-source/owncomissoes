@@ -324,13 +324,34 @@ function App() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
-        <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-10 text-center shadow-2xl">
-          <h1 className="text-2xl font-black text-white mb-4 tracking-tight uppercase italic">Acesso Restrito</h1>
-          <p className="text-zinc-400 mb-8 leading-relaxed">Este sistema é exclusivo para operadores autorizados.</p>
-          <a href="https://ownpainel.vercel.app" className="flex items-center justify-center gap-3 bg-brand text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95">
-            → Ir para o Hub
-          </a>
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(225,6,0,0.08) 0%, #000 60%)' }}>
+        <div className="absolute inset-0 bg-grid z-0" />
+        <div className="max-w-md w-full relative z-10 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[22px] bg-white/5 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)] mb-5 overflow-hidden p-3">
+            <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
+          </div>
+          <div className="font-display italic font-black text-4xl tracking-tighter uppercase mb-1">
+            OWN <span className="text-brand">COMISSÕES</span>
+          </div>
+          <div className="text-[11px] font-semibold text-zinc-500 tracking-[0.25em] uppercase mb-12">
+            Acesso Restrito
+          </div>
+          
+          <div className="bg-white/5 border border-white/10 rounded-[24px] p-9 backdrop-blur-md shadow-2xl">
+            <h1 className="font-display text-2xl font-black mb-2 italic uppercase">Autenticação Necessária</h1>
+            <p className="text-zinc-400 text-sm mb-8 leading-relaxed">Este sistema é exclusivo para operadores autorizados. Por favor, autentique-se via hub.</p>
+            
+            <a 
+              href="https://ownpainel.vercel.app" 
+              className="flex items-center justify-center gap-2 bg-brand text-white w-full py-4 rounded-xl text-[13px] font-bold uppercase tracking-widest hover:bg-brand-light hover:-translate-y-px transition-all shadow-[0_8px_24px_rgba(225,6,0,0.25)] hover:shadow-[0_12px_32px_rgba(225,6,0,0.4)] active:scale-[0.98]"
+            >
+              Ir para o Hub
+            </a>
+          </div>
+          
+          <div className="mt-8 text-zinc-600 text-[11px] font-semibold tracking-widest uppercase">
+            OWN BARBER CLUB © {new Date().getFullYear()}
+          </div>
         </div>
       </div>
     );

@@ -39,6 +39,15 @@ body {
   }
 }
 
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(225, 6, 0, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(225, 6, 0, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+}
+
 /* Custom scrollbar matching Zinc theme */
 ::-webkit-scrollbar {
   width: 8px;
