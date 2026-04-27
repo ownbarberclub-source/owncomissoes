@@ -13,7 +13,9 @@ import {
   DollarSign,
   CalendarDays,
   Store,
-  Wallet
+  Wallet,
+  ShieldCheck,
+  User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,13 +38,19 @@ function App() {
     const hubToken = params.get('hub_token');
     const hubUser = params.get('hub_user');
     const hubName = params.get('hub_name');
-    const hubRole = params.get('hub_role');
+    const hubRole = params.get('hub_role'); // Pode ser 'admin' ou 'operator' do Hub
 
     if (hubToken && hubUser) {
+      // Normaliza o papel para exibição e permissões
+      let finalRole = 'operador';
+      if (hubRole === 'admin' || hubRole === 'administrador') {
+        finalRole = 'administrador';
+      }
+
       const userSession = {
         name: hubName || 'Usuário',
         email: hubUser,
-        role: hubRole || 'operador'
+        role: finalRole
       };
       setSession(userSession);
       localStorage.setItem('@own-comissoes:session', JSON.stringify(userSession));
@@ -254,6 +262,8 @@ function App() {
     );
   }
 
+  const isAdmin = session.role === 'administrador';
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-brand/30">
       <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50">
@@ -293,8 +303,11 @@ function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-black text-zinc-200">{session.name}</p>
+            <div className="hidden md:flex flex-col items-end">
+              <p className="text-sm font-black text-zinc-200 flex items-center gap-2">
+                {isAdmin ? <ShieldCheck size={14} className="text-brand" /> : <UserIcon size={14} className="text-zinc-500" />}
+                {session.name}
+              </p>
               <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">{session.role}</p>
             </div>
             <button
@@ -511,7 +524,7 @@ function App() {
         </div>
       </main>
 
-      {selectedUnit && (
+      {(selectedUnit && (isAdmin || activeTab === 'commissions')) && (
         <div className="fixed bottom-10 inset-x-0 flex justify-center z-50 pointer-events-none">
           <div className="pointer-events-auto">
             <button 
