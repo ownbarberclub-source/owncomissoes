@@ -462,94 +462,98 @@ function App() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl overflow-hidden"
                 >
                   {barbers.length === 0 ? (
-                    <div className="col-span-full py-12 text-center bg-zinc-900 border border-zinc-800 rounded-3xl">
+                    <div className="py-12 text-center">
                       <p className="text-zinc-500">Nenhum barbeiro encontrado para esta unidade.</p>
                     </div>
                   ) : (
-                    barbers.map(barber => (
-                      <div key={barber.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 relative overflow-hidden group hover:border-zinc-700 transition-all shadow-xl">
-                        <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none">
-                          <CreditCard className="text-white" size={64} />
-                        </div>
-                        
-                        <div className="mb-6 flex justify-between items-start relative z-10">
-                          <div>
-                            <h3 className="text-xl font-black text-white group-hover:text-brand transition-colors">{barber.name}</h3>
-                            <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">{barber.id.slice(0, 8)}</p>
-                          </div>
-                          <button 
-                            onClick={() => {
-                              setSettingsModalBarber(barber.id);
-                              const g = guarantees[barber.id];
-                              setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
-                            }}
-                            className="p-2 bg-zinc-950 text-zinc-500 hover:text-brand border border-zinc-800 rounded-xl transition-all relative z-20 cursor-pointer"
-                            title="Configurar Garantia"
-                          >
-                            <Settings size={16} />
-                          </button>
-                        </div>
-
-                        <div className="space-y-5">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                              <span className="w-1 h-1 bg-brand rounded-full" /> Período 01-15
-                            </label>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                              <input 
-                                type="number"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                                placeholder="0,00"
-                                value={commissions[barber.id]?.quinzena_1 || ''}
-                                onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
-                              />
-                            </div>
-                            {getGuaranteeForBarber(barber.id) && (
-                              <p className="text-[10px] text-brand/80 mt-1">Garantia base: R$ {getGuaranteeForBarber(barber.id)?.q1.toFixed(2)}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                              <span className="w-1 h-1 bg-brand rounded-full" /> 16-Fim (Avulsos)
-                            </label>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                              <input 
-                                type="number"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                                placeholder="0,00"
-                                value={commissions[barber.id]?.quinzena_2_avulso || ''}
-                                onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
-                              />
-                            </div>
-                            {getGuaranteeForBarber(barber.id) && (
-                              <p className="text-[10px] text-brand/80 mt-1">Garantia (junto c/ Assinaturas): R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-                              <span className="w-1 h-1 bg-brand rounded-full" /> Assinaturas (Mês)
-                            </label>
-                            <div className="relative">
-                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                              <input 
-                                type="number"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all"
-                                placeholder="0,00"
-                                value={commissions[barber.id]?.mes_assinatura || ''}
-                                onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', e.target.value)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                          <tr className="bg-zinc-950/50 border-b border-zinc-800">
+                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
+                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">Período 01-15</th>
+                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">16-Fim (Avulsos)</th>
+                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">Assinaturas</th>
+                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-16 text-center">⚙️</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/50">
+                          {barbers.map(barber => (
+                            <tr key={barber.id} className="hover:bg-zinc-800/20 transition-colors group">
+                              <td className="p-5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase shadow-inner">
+                                    {barber.name.substring(0, 2)}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-black text-white group-hover:text-brand transition-colors">{barber.name}</p>
+                                    <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">{barber.id.slice(0, 8)}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-5 align-top">
+                                <div className="relative">
+                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                  <input 
+                                    type="number"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
+                                    placeholder="0,00"
+                                    value={commissions[barber.id]?.quinzena_1 || ''}
+                                    onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
+                                  />
+                                </div>
+                                {getGuaranteeForBarber(barber.id) && (
+                                  <p className="text-[9px] text-brand/80 mt-2 flex items-center gap-1 font-bold tracking-wide uppercase"><ShieldCheck size={10} /> Gar: R$ {getGuaranteeForBarber(barber.id)?.q1.toFixed(2)}</p>
+                                )}
+                              </td>
+                              <td className="p-5 align-top">
+                                <div className="relative">
+                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                  <input 
+                                    type="number"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
+                                    placeholder="0,00"
+                                    value={commissions[barber.id]?.quinzena_2_avulso || ''}
+                                    onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
+                                  />
+                                </div>
+                                {getGuaranteeForBarber(barber.id) && (
+                                  <p className="text-[9px] text-brand/80 mt-2 flex items-center gap-1 font-bold tracking-wide uppercase"><ShieldCheck size={10} /> Gar (c/ Ass): R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
+                                )}
+                              </td>
+                              <td className="p-5 align-top">
+                                <div className="relative">
+                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                  <input 
+                                    type="number"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
+                                    placeholder="0,00"
+                                    value={commissions[barber.id]?.mes_assinatura || ''}
+                                    onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', e.target.value)}
+                                  />
+                                </div>
+                              </td>
+                              <td className="p-5 align-top text-center">
+                                <button 
+                                  onClick={() => {
+                                    setSettingsModalBarber(barber.id);
+                                    const g = guarantees[barber.id];
+                                    setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
+                                  }}
+                                  className="p-2.5 bg-zinc-950 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-zinc-800 hover:border-brand/30 rounded-xl transition-all inline-flex items-center justify-center"
+                                  title="Configurar Garantia"
+                                >
+                                  <Settings size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </motion.div>
               ) : (
