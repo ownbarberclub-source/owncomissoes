@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
@@ -25,7 +25,6 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
-  // Auth via Hub (Token Relay) + Supabase signIn
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hubToken = params.get('hub_token');
@@ -81,27 +80,24 @@ function App() {
   const loadExistingData = async (barberList: Barber[]) => {
     if (!selectedPeriod || !selectedUnit) return;
 
-    const { data: commData } = await supabase
-      .from('previa_manual_payments')
-      .select('*')
-      .eq('period', selectedPeriod)
-      .eq('unit_id', selectedUnit);
+    let commQuery = supabase.from('previa_manual_payments').select('*').eq('period', selectedPeriod);
+    if (selectedUnit !== 'all') commQuery = commQuery.eq('unit_id', selectedUnit);
+    const { data: commData } = await commQuery;
 
     const newComm: Record<string, CommissionRecord> = {};
     barberList.forEach(b => {
-      newComm[b.id] = { barber_id: b.id, quinzena_1: 0, quinzena_2_avulso: 0, mes_assinatura: 0, status_q1: 'pending', status_q2: 'pending' };
+      newComm[b.id] = { barber_id: b.id, unit_id: b.unit_id, quinzena_1: 0, quinzena_2_avulso: 0, mes_assinatura: 0, status_q1: 'pending', status_q2: 'pending' };
     });
 
     if (commData) {
       commData.forEach(c => {
-        newComm[c.barber_id] = {
-          barber_id: c.barber_id,
-          quinzena_1: c.quinzena_1,
-          quinzena_2_avulso: c.quinzena_2_avulso,
-          mes_assinatura: c.mes_assinatura,
-          status_q1: c.status_q1 || 'pending',
-          status_q2: c.status_q2 || 'pending'
-        };
+        if (newComm[c.barber_id]) {
+          newComm[c.barber_id].quinzena_1 = c.quinzena_1;
+          newComm[c.barber_id].quinzena_2_avulso = c.quinzena_2_avulso;
+          newComm[c.barber_id].mes_assinatura = c.mes_assinatura;
+          newComm[c.barber_id].status_q1 = c.status_q1 || 'pending';
+          newComm[c.barber_id].status_q2 = c.status_q2 || 'pending';
+        }
       });
     }
     setCommissions(newComm);
@@ -113,7 +109,6 @@ function App() {
       .in('barber_id', barberList.map(b => b.id));
 
     if (voucherData) {
-      // Compatibilidade retroativa para vales antigos sem deduct_from
       setVouchers(voucherData.map(v => ({...v, deduct_from: v.deduct_from || 'q1'})));
     } else {
       setVouchers([]);
@@ -134,7 +129,11 @@ function App() {
   useEffect(() => {
     if (!selectedUnit) return;
     async function fetchBarbers() {
-      const { data, error } = await supabase.from('previa_barbers').select('*').eq('unit_id', selectedUnit);
+      let query = supabase.from('previa_barbers').select('*');
+      if (selectedUnit !== 'all') {
+        query = query.eq('unit_id', selectedUnit);
+      }
+      const { data, error } = await query;
       if (error) console.error('Error fetching barbers:', error);
       if (data) {
         setBarbers(data);
@@ -149,6 +148,23 @@ function App() {
       loadExistingData(barbers);
     }
   }, [selectedPeriod]);
+
+  // Agrupa barbeiros por nome quando está na visão "Todas as Unidades"
+  const groupedBarbers = useMemo(() => {
+    if (selectedUnit !== 'all') {
+      return barbers.map(b => ({ id: b.id, all_ids: [b.id], name: b.name }));
+    }
+    const map = new Map<string, { id: string; all_ids: string[]; name: string }>();
+    barbers.forEach(b => {
+      const key = b.name.trim().toLowerCase();
+      if (map.has(key)) {
+        map.get(key)!.all_ids.push(b.id);
+      } else {
+        map.set(key, { id: b.id, all_ids: [b.id], name: b.name });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [barbers, selectedUnit]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -172,21 +188,35 @@ function App() {
     return { q1, q2 };
   };
 
-  const calculateTotals = (barberId: string) => {
-    const c = commissions[barberId];
-    if (!c) return { q1: 0, q2: 0, vQ1: 0, vQ2: 0 };
+  const getUnifiedSums = (all_ids: string[]) => {
+    let sumQ1 = 0;
+    let sumQ2 = 0;
+    let sumAssin = 0;
+    all_ids.forEach(id => {
+      const c = commissions[id];
+      if (c) {
+        sumQ1 += c.quinzena_1 || 0;
+        sumQ2 += c.quinzena_2_avulso || 0;
+        sumAssin += c.mes_assinatura || 0;
+      }
+    });
+    return { sumQ1, sumQ2, sumAssin };
+  };
+
+  const calculateTotals = (primaryId: string, all_ids: string[]) => {
+    const sums = getUnifiedSums(all_ids);
+    const guar = getGuaranteeForBarber(primaryId);
     
-    const guar = getGuaranteeForBarber(barberId);
-    const baseQ1 = guar ? Math.max(c.quinzena_1, guar.q1) : c.quinzena_1;
-    const baseQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2 - (c.mes_assinatura || 0)) : c.quinzena_2_avulso;
+    const baseQ1 = guar ? Math.max(sums.sumQ1, guar.q1) : sums.sumQ1;
+    const baseQ2 = guar ? Math.max(sums.sumQ2, guar.q2 - sums.sumAssin) : sums.sumQ2;
     
-    const barberVouchers = vouchers.filter(v => v.barber_id === barberId);
+    const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
     const vQ1 = barberVouchers.filter(v => v.deduct_from === 'q1').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
     const vQ2 = barberVouchers.filter(v => v.deduct_from === 'q2').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
     
     return {
       q1: baseQ1 - vQ1,
-      q2: (baseQ2 + (c.mes_assinatura || 0)) - vQ2,
+      q2: (baseQ2 + sums.sumAssin) - vQ2,
       vQ1,
       vQ2
     };
@@ -224,22 +254,31 @@ function App() {
     }));
   };
 
+  const toggleUnifiedStatus = (all_ids: string[], field: 'status_q1' | 'status_q2', currentStatus: 'pending' | 'paid') => {
+    const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+    setCommissions(prev => {
+      const next = { ...prev };
+      all_ids.forEach(id => {
+        if (next[id]) {
+          next[id] = { ...next[id], [field]: newStatus };
+        }
+      });
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     if (!selectedPeriod || !selectedUnit) return;
     setSaving(true);
 
     try {
       const commToSave = Object.values(commissions).map(c => {
-        const guar = getGuaranteeForBarber(c.barber_id);
-        const finalQ1 = guar ? Math.max(c.quinzena_1, guar.q1) : c.quinzena_1;
-        const finalQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2 - (c.mes_assinatura || 0)) : c.quinzena_2_avulso;
-
         return {
-          unit_id: selectedUnit,
+          unit_id: c.unit_id,
           period: selectedPeriod,
           barber_id: c.barber_id,
-          quinzena_1: finalQ1,
-          quinzena_2_avulso: finalQ2,
+          quinzena_1: c.quinzena_1,
+          quinzena_2_avulso: c.quinzena_2_avulso,
           mes_assinatura: c.mes_assinatura,
           status_q1: c.status_q1 || 'pending',
           status_q2: c.status_q2 || 'pending',
@@ -279,8 +318,8 @@ function App() {
     else setExpandedBarbers(prev => [...prev, barberId]);
   };
 
-  const addVoucher = (barberId: string) => {
-    setVouchers([...vouchers, { barber_id: barberId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0] }]);
+  const addVoucher = (primaryId: string) => {
+    setVouchers([...vouchers, { barber_id: primaryId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0] }]);
   };
 
   if (!session) {
@@ -298,6 +337,7 @@ function App() {
   }
 
   const isAdmin = session.role === 'administrador';
+  const isUnifiedView = selectedUnit === 'all';
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-brand/30">
@@ -336,6 +376,7 @@ function App() {
             </div>
             <select className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
               <option value="" className="bg-zinc-900">Selecione uma unidade</option>
+              <option value="all" className="bg-zinc-900 font-bold text-brand">🌟 TODAS AS UNIDADES (UNIFICADO)</option>
               {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-900">{u.name}</option>)}
             </select>
           </div>
@@ -349,12 +390,25 @@ function App() {
           </div>
         </div>
 
+        {isUnifiedView && (
+          <div className="bg-brand/10 border border-brand/20 p-5 rounded-2xl flex items-start gap-4">
+            <AlertCircle className="text-brand shrink-0 mt-0.5" size={20} />
+            <div>
+              <h3 className="font-bold text-brand mb-1">Visão Unificada (Leitura e Fechamento)</h3>
+              <p className="text-sm text-zinc-400">
+                Nesta tela os valores dos barbeiros de múltiplas unidades estão <strong>somados</strong>. 
+                Os campos de digitação estão bloqueados para proteger os dados individuais. Use esta tela para conferir a Garantia global, adicionar vales e realizar a baixa do pagamento (botão Pendente/Pago).
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="relative">
           {selectedUnit ? (
             <AnimatePresence mode="wait">
               <motion.div key="comm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl overflow-hidden">
-                {barbers.length === 0 ? (
-                  <div className="py-12 text-center"><p className="text-zinc-500">Nenhum barbeiro encontrado para esta unidade.</p></div>
+                {groupedBarbers.length === 0 ? (
+                  <div className="py-12 text-center"><p className="text-zinc-500">Nenhum barbeiro encontrado.</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
@@ -367,12 +421,15 @@ function App() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-800/50">
-                        {barbers.map(barber => {
+                        {groupedBarbers.map(barber => {
                           const isExpanded = expandedBarbers.includes(barber.id);
-                          const totals = calculateTotals(barber.id);
-                          const barberVouchers = vouchers.filter(v => v.barber_id === barber.id);
-                          const statusQ1 = commissions[barber.id]?.status_q1 || 'pending';
-                          const statusQ2 = commissions[barber.id]?.status_q2 || 'pending';
+                          const sums = getUnifiedSums(barber.all_ids);
+                          const totals = calculateTotals(barber.id, barber.all_ids);
+                          const barberVouchers = vouchers.filter(v => barber.all_ids.includes(v.barber_id));
+                          
+                          // O status exibido será baseado no primeiro ID da lista
+                          const statusQ1 = commissions[barber.all_ids[0]]?.status_q1 || 'pending';
+                          const statusQ2 = commissions[barber.all_ids[0]]?.status_q2 || 'pending';
 
                           return (
                             <React.Fragment key={barber.id}>
@@ -384,7 +441,9 @@ function App() {
                                     </div>
                                     <div>
                                       <p className="text-sm font-black text-white group-hover:text-brand transition-colors">{barber.name}</p>
-                                      <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">{barber.id.slice(0, 8)}</p>
+                                      <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">
+                                        {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
+                                      </p>
                                     </div>
                                   </div>
                                 </td>
@@ -397,9 +456,10 @@ function App() {
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                         <input 
                                           type="number"
-                                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                          disabled={isUnifiedView}
+                                          className={`w-full border rounded-xl py-2 pl-9 pr-3 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50 focus:ring-1 focus:ring-brand/20'}`}
                                           placeholder="0,00"
-                                          value={commissions[barber.id]?.quinzena_1 === 0 ? '' : commissions[barber.id]?.quinzena_1}
+                                          value={isUnifiedView ? sums.sumQ1 : (commissions[barber.id]?.quinzena_1 === 0 ? '' : commissions[barber.id]?.quinzena_1)}
                                           onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', parseFloat(e.target.value) || 0)}
                                         />
                                       </div>
@@ -410,7 +470,7 @@ function App() {
                                         <span className={`text-sm font-black ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
                                       </div>
                                       <button 
-                                        onClick={() => handleCommissionChange(barber.id, 'status_q1', statusQ1 === 'paid' ? 'pending' : 'paid')}
+                                        onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
                                         className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
                                       >
                                         {statusQ1 === 'paid' ? '✅ Já Pago' : 'Pendente'}
@@ -428,9 +488,10 @@ function App() {
                                           <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                           <input 
                                             type="number"
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                            disabled={isUnifiedView}
+                                            className={`w-full border rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50'}`}
                                             placeholder="0"
-                                            value={commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso}
+                                            value={isUnifiedView ? sums.sumQ2 : (commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
                                           />
                                         </div>
@@ -441,9 +502,10 @@ function App() {
                                           <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
                                           <input 
                                             type="number"
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                            disabled={isUnifiedView}
+                                            className={`w-full border rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none transition-all text-sm ${isUnifiedView ? 'bg-zinc-950/50 border-transparent text-zinc-400 cursor-not-allowed' : 'bg-zinc-950 border-zinc-800 focus:border-brand/50'}`}
                                             placeholder="0"
-                                            value={commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura}
+                                            value={isUnifiedView ? sums.sumAssin : (commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura)}
                                             onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
                                           />
                                         </div>
@@ -455,7 +517,7 @@ function App() {
                                         <span className={`text-sm font-black ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
                                       </div>
                                       <button 
-                                        onClick={() => handleCommissionChange(barber.id, 'status_q2', statusQ2 === 'paid' ? 'pending' : 'paid')}
+                                        onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
                                         className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
                                       >
                                         {statusQ2 === 'paid' ? '✅ Já Pago' : 'Pendente'}
@@ -600,6 +662,9 @@ function App() {
                 <label className="text-xs font-black text-zinc-500 uppercase">Válido Até (Mês)</label>
                 <input type="month" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
               </div>
+              <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-zinc-800/50">
+                O sistema dividirá o valor pelo número de dias do mês atual e aplicará a fração na hora de salvar, sempre escolhendo o maior valor (digitado vs garantia). Deixe em branco para desativar.
+              </p>
               <button onClick={saveGuarantee} disabled={saving} className="w-full mt-4 bg-brand text-white py-4 rounded-xl font-black uppercase text-sm hover:bg-brand-light transition-all">
                 {saving ? 'Salvando...' : 'Salvar Garantia'}
               </button>

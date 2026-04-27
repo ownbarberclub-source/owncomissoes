@@ -17,6 +17,7 @@ export interface BarberGuarantee {
 
 export interface CommissionRecord {
   barber_id: string;
+  unit_id?: string;
   quinzena_1: number;
   quinzena_2_avulso: number;
   mes_assinatura: number;
