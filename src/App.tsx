@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
@@ -24,6 +24,18 @@ function App() {
   const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string}>({value: '', until: ''});
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
+  const unitDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (unitDropdownRef.current && !unitDropdownRef.current.contains(event.target as Node)) {
+        setUnitDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -403,16 +415,55 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl">
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl relative" ref={unitDropdownRef}>
             <div className="flex items-center gap-2 text-zinc-500">
               <Store size={16} className="group-hover:text-brand transition-colors" />
               <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Unidade</label>
             </div>
-            <select className="bg-transparent text-xl font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
-              <option value="" className="bg-zinc-950">Selecione uma unidade</option>
-              <option value="all" className="bg-zinc-950 font-black text-brand italic uppercase">🌟 Todas as Unidades (Unificado)</option>
-              {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
-            </select>
+            
+            <button 
+              onClick={() => setUnitDropdownOpen(!unitDropdownOpen)}
+              className="w-full flex items-center justify-between text-xl font-display font-black text-white italic uppercase text-left group/btn"
+            >
+              <span className={selectedUnit === 'all' ? 'text-brand' : ''}>
+                {selectedUnit === 'all' ? '🌟 Todas as Unidades' : units.find(u => u.id === selectedUnit)?.name || 'Selecione...'}
+              </span>
+              <ChevronDown size={20} className={`transition-transform duration-300 ${unitDropdownOpen ? 'rotate-180 text-brand' : 'text-zinc-500 group-hover/btn:text-white'}`} />
+            </button>
+
+            <AnimatePresence>
+              {unitDropdownOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 z-[100] bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden py-2"
+                >
+                  <button 
+                    onClick={() => { setSelectedUnit('all'); setUnitDropdownOpen(false); }}
+                    className={`w-full px-5 py-4 text-left flex items-center justify-between transition-colors hover:bg-white/5 ${selectedUnit === 'all' ? 'bg-brand/10 border-l-4 border-brand' : ''}`}
+                  >
+                    <span className="text-sm font-display font-black italic uppercase text-brand">🌟 Todas as Unidades (Unificado)</span>
+                    {selectedUnit === 'all' && <CheckCircle2 size={16} className="text-brand" />}
+                  </button>
+                  
+                  <div className="h-px bg-white/5 mx-2 my-1" />
+                  
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {units.map(u => (
+                      <button 
+                        key={u.id}
+                        onClick={() => { setSelectedUnit(u.id); setUnitDropdownOpen(false); }}
+                        className={`w-full px-5 py-4 text-left flex items-center justify-between transition-colors hover:bg-white/5 ${selectedUnit === u.id ? 'bg-white/10 border-l-4 border-brand' : ''}`}
+                      >
+                        <span className="text-sm font-display font-black italic uppercase text-white">{u.name}</span>
+                        {selectedUnit === u.id && <CheckCircle2 size={16} className="text-brand" />}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl">
