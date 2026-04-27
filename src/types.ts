@@ -9,12 +9,6 @@ export interface Barber {
   name: string;
 }
 
-export interface Cycle {
-  id: string;
-  month_year: string;
-  status: 'open' | 'closed';
-}
-
 export interface CommissionRecord {
   barber_id: string;
   quinzena_1: number;

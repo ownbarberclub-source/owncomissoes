@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
-import type { Unit, Barber, Cycle, CommissionRecord, Voucher, UserSession } from './types';
+import type { Unit, Barber, CommissionRecord, Voucher, UserSession } from './types';
 import { 
   Save, 
   CreditCard, 
@@ -23,8 +23,7 @@ function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>('');
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<string>('');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(new Date().toISOString().slice(0, 7));
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [commissions, setCommissions] = useState<Record<string, CommissionRecord>>({});
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -97,27 +96,17 @@ function App() {
 
     async function fetchData() {
       try {
-        console.log('[OWN Comissões] Buscando unidades e ciclos...');
+        console.log('[OWN Comissões] Buscando unidades...');
         const { data: unitsData, error: unitsError } = await supabase.from('previa_units').select('*');
-        const { data: cyclesData, error: cyclesError } = await supabase.from('previa_cycles').select('*').order('created_at', { ascending: false });
 
         console.log('[OWN Comissões] Unidades:', unitsData, '| Erro:', unitsError);
-        console.log('[OWN Comissões] Ciclos:', cyclesData, '| Erro:', cyclesError);
 
         if (unitsError) {
           console.error('[OWN Comissões] Error fetching units:', unitsError);
           showNotification('error', `Falha ao carregar unidades: ${unitsError.message}`);
         }
-        if (cyclesError) {
-          console.error('[OWN Comissões] Error fetching cycles:', cyclesError);
-          showNotification('error', `Falha ao carregar ciclos: ${cyclesError.message}`);
-        }
 
         if (unitsData) setUnits(unitsData);
-        if (cyclesData) {
-          setCycles(cyclesData);
-          if (cyclesData.length > 0) setSelectedCycle(cyclesData[0].id);
-        }
       } catch (err) {
         console.error('[OWN Comissões] Fetch initial data failed:', err);
         showNotification('error', 'Erro de conexão com o banco de dados.');
@@ -128,12 +117,12 @@ function App() {
   }, [session]);
 
   const loadExistingData = async (barberList: Barber[]) => {
-    if (!selectedCycle || !selectedUnit) return;
+    if (!selectedPeriod || !selectedUnit) return;
 
     const { data: commData } = await supabase
       .from('previa_manual_payments')
       .select('*')
-      .eq('cycle_id', selectedCycle)
+      .eq('period', selectedPeriod)
       .eq('unit_id', selectedUnit);
 
     if (commData) {
@@ -155,7 +144,7 @@ function App() {
     const { data: voucherData } = await supabase
       .from('previa_barber_vouchers')
       .select('*')
-      .eq('cycle_id', selectedCycle)
+      .eq('period', selectedPeriod)
       .in('barber_id', barberList.map(b => b.id));
 
     if (voucherData) {
@@ -176,7 +165,7 @@ function App() {
       
       if (data) {
         setBarbers(data);
-        if (selectedCycle) loadExistingData(data);
+        if (selectedPeriod) loadExistingData(data);
       }
     }
 
@@ -184,10 +173,10 @@ function App() {
   }, [selectedUnit]);
 
   useEffect(() => {
-    if (barbers.length > 0 && selectedCycle) {
+    if (barbers.length > 0 && selectedPeriod) {
       loadExistingData(barbers);
     }
-  }, [selectedCycle]);
+  }, [selectedPeriod]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -206,13 +195,13 @@ function App() {
   };
 
   const handleSave = async () => {
-    if (!selectedCycle || !selectedUnit) return;
+    if (!selectedPeriod || !selectedUnit) return;
     setSaving(true);
 
     try {
       const commToSave = Object.values(commissions).map(c => ({
         unit_id: selectedUnit,
-        cycle_id: selectedCycle,
+        period: selectedPeriod,
         barber_id: c.barber_id,
         quinzena_1: c.quinzena_1,
         quinzena_2_avulso: c.quinzena_2_avulso,
@@ -222,14 +211,14 @@ function App() {
 
       const { error: commError } = await supabase
         .from('previa_manual_payments')
-        .upsert(commToSave, { onConflict: 'barber_id,cycle_id' });
+        .upsert(commToSave, { onConflict: 'barber_id,period' });
 
       if (commError) throw commError;
 
       const { error: delError } = await supabase
         .from('previa_barber_vouchers')
         .delete()
-        .eq('cycle_id', selectedCycle)
+        .eq('period', selectedPeriod)
         .in('barber_id', barbers.map(b => b.id));
 
       if (delError) throw delError;
@@ -237,7 +226,7 @@ function App() {
       if (vouchers.length > 0) {
         const vouchersToSave = vouchers.map(v => ({
           barber_id: v.barber_id,
-          cycle_id: selectedCycle,
+          period: selectedPeriod,
           value: v.value,
           description: v.description,
           date: v.date
@@ -380,16 +369,14 @@ function App() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex flex-col gap-2 group hover:border-zinc-700 transition-all">
             <div className="flex items-center gap-2 text-zinc-500">
               <CalendarDays size={14} className="group-hover:text-brand transition-colors" />
-              <label className="text-[10px] font-black uppercase tracking-widest">Ciclo / Mês</label>
+              <label className="text-[10px] font-black uppercase tracking-widest">Mês de Referência</label>
             </div>
-            <select 
+            <input 
+              type="month"
               className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none"
-              value={selectedCycle}
-              onChange={(e) => setSelectedCycle(e.target.value)}
-            >
-              <option value="" className="bg-zinc-900">Selecione o ciclo</option>
-              {cycles.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">{c.month_year}</option>)}
-            </select>
+              value={selectedPeriod}
+              onChange={(e) => setSelectedPeriod(e.target.value)}
+            />
           </div>
         </div>
 
@@ -556,7 +543,7 @@ function App() {
               </div>
               <h2 className="text-2xl font-black text-white mb-3">Selecione uma unidade para começar</h2>
               <p className="text-zinc-500 max-w-md mx-auto leading-relaxed">
-                Escolha a unidade e o ciclo de faturamento no menu superior para visualizar os barbeiros e realizar os lançamentos.
+                Escolha a unidade e o mês de referência no menu superior para visualizar os barbeiros e realizar os lançamentos.
               </p>
             </div>
           )}
