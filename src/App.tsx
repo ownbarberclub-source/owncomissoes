@@ -269,7 +269,7 @@ function App() {
       const commToSave = Object.values(commissions).map(c => {
         const guar = getGuaranteeForBarber(c.barber_id);
         const finalQ1 = guar ? Math.max(c.quinzena_1, guar.q1) : c.quinzena_1;
-        const finalQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2) : c.quinzena_2_avulso;
+        const finalQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2 - (c.mes_assinatura || 0)) : c.quinzena_2_avulso;
 
         return {
           unit_id: selectedUnit,
@@ -528,7 +528,7 @@ function App() {
                               />
                             </div>
                             {getGuaranteeForBarber(barber.id) && (
-                              <p className="text-[10px] text-brand/80 mt-1">Garantia base: R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
+                              <p className="text-[10px] text-brand/80 mt-1">Garantia (junto c/ Assinaturas): R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
                             )}
                           </div>
 
