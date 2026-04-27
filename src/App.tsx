@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, Cycle, CommissionRecord, Voucher, UserSession } from './types';
+import Logo from './assets/logo.png';
 import { 
   Scissors, 
   Save, 
@@ -229,8 +230,8 @@ function App() {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
         <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-10 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-brand rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-brand/20">
-            <LockIcon className="text-white" size={36} />
+          <div className="w-20 h-20 bg-zinc-950 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-zinc-800 p-4">
+            <img src={Logo} alt="OWN Logo" className="w-full h-full object-contain brightness-0 invert" />
           </div>
           <h1 className="text-2xl font-black text-white mb-4 tracking-tight uppercase italic">Acesso Restrito</h1>
           <p className="text-zinc-400 mb-8 leading-relaxed">
@@ -254,7 +255,7 @@ function App() {
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
                <div className="w-10 h-10 bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 p-1.5 shadow-lg flex items-center justify-center">
-                  <Scissors className="text-brand" size={24} />
+                  <img src={Logo} alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
                </div>
                <h1 className="text-xl font-black tracking-tighter text-zinc-100 hidden sm:block uppercase italic">
                  OWN <span className="text-brand">COMISSÕES</span>
