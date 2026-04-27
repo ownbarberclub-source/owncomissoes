@@ -32,35 +32,63 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
-  // Auth via Hub (Token Relay)
+  // Auth via Hub (Token Relay) + Supabase signIn
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hubToken = params.get('hub_token');
-    const hubUser = params.get('hub_user');
-    const hubName = params.get('hub_name');
-    const hubRole = params.get('hub_role'); // Pode ser 'admin' ou 'operator' do Hub
+    const hubUser  = params.get('hub_user');
+    const hubPass  = params.get('hub_pass');
+    const hubName  = params.get('hub_name');
+    const hubRole  = params.get('hub_role');
 
-    if (hubToken && hubUser) {
-      // Normaliza o papel para exibição e permissões
-      let finalRole = 'operador';
-      if (hubRole === 'admin' || hubRole === 'administrador') {
-        finalRole = 'administrador';
+    async function initAuth() {
+      // 1. Tenta autenticar no Supabase via senha relay (igual ao own-contatos)
+      if (hubUser && hubPass) {
+        try {
+          const password = atob(hubPass);
+          const { error: authErr } = await supabase.auth.signInWithPassword({ email: hubUser, password });
+          if (authErr) {
+            console.warn('[OWN Comissões] signInWithPassword falhou:', authErr.message);
+          } else {
+            console.log('[OWN Comissões] Autenticado no Supabase com sucesso.');
+          }
+        } catch (e: any) {
+          console.warn('[OWN Comissões] Erro ao decodificar hub_pass:', e.message);
+        }
       }
 
-      const userSession = {
-        name: hubName || 'Usuário',
-        email: hubUser,
-        role: finalRole
-      };
-      setSession(userSession);
-      localStorage.setItem('@own-comissoes:session', JSON.stringify(userSession));
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else {
-      const saved = localStorage.getItem('@own-comissoes:session');
-      if (saved) {
-        setSession(JSON.parse(saved));
+      // 2. Define sessão local da interface
+      if (hubUser && (hubToken || hubPass)) {
+        let finalRole = 'operador';
+        if (hubRole === 'admin' || hubRole === 'administrador') {
+          finalRole = 'administrador';
+        }
+        const userSession = {
+          name: hubName || 'Usuário',
+          email: hubUser,
+          role: finalRole
+        };
+        setSession(userSession);
+        localStorage.setItem('@own-comissoes:session', JSON.stringify(userSession));
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else {
+        // 3. Tenta restaurar sessão existente do localStorage
+        const saved = localStorage.getItem('@own-comissoes:session');
+        if (saved) {
+          // Verifica se há sessão ativa no Supabase
+          const { data: { session: supaSession } } = await supabase.auth.getSession();
+          if (supaSession) {
+            setSession(JSON.parse(saved));
+          } else {
+            // Sessão Supabase expirou — limpa e exige reautenticação via Hub
+            console.warn('[OWN Comissões] Sessão Supabase expirada. Redirecionando ao Hub.');
+            localStorage.removeItem('@own-comissoes:session');
+          }
+        }
       }
     }
+
+    initAuth();
   }, []);
 
   // Fetch initial data
@@ -69,11 +97,21 @@ function App() {
 
     async function fetchData() {
       try {
+        console.log('[OWN Comissões] Buscando unidades e ciclos...');
         const { data: unitsData, error: unitsError } = await supabase.from('previa_units').select('*');
         const { data: cyclesData, error: cyclesError } = await supabase.from('previa_cycles').select('*').order('created_at', { ascending: false });
 
-        if (unitsError) console.error('Error fetching units:', unitsError);
-        if (cyclesError) console.error('Error fetching cycles:', cyclesError);
+        console.log('[OWN Comissões] Unidades:', unitsData, '| Erro:', unitsError);
+        console.log('[OWN Comissões] Ciclos:', cyclesData, '| Erro:', cyclesError);
+
+        if (unitsError) {
+          console.error('[OWN Comissões] Error fetching units:', unitsError);
+          showNotification('error', `Falha ao carregar unidades: ${unitsError.message}`);
+        }
+        if (cyclesError) {
+          console.error('[OWN Comissões] Error fetching cycles:', cyclesError);
+          showNotification('error', `Falha ao carregar ciclos: ${cyclesError.message}`);
+        }
 
         if (unitsData) setUnits(unitsData);
         if (cyclesData) {
@@ -81,7 +119,8 @@ function App() {
           if (cyclesData.length > 0) setSelectedCycle(cyclesData[0].id);
         }
       } catch (err) {
-        console.error('Fetch initial data failed:', err);
+        console.error('[OWN Comissões] Fetch initial data failed:', err);
+        showNotification('error', 'Erro de conexão com o banco de dados.');
       }
     }
 
