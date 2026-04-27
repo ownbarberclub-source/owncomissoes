@@ -447,13 +447,6 @@ function App() {
             </div>
           </div>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={handleSave}
-                disabled={saving || isUnifiedView}
-                className={`hidden lg:flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${saving ? 'bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed' : 'bg-brand hover:bg-brand-light text-white border-brand shadow-lg shadow-brand/20 active:scale-95'}`}
-              >
-                <Save size={14} /> {saving ? 'Salvando...' : 'Salvar Alterações'}
-              </button>
               {isAdmin && (
                 <button 
                   onClick={() => setManageProfessionalsModal(true)}
@@ -825,23 +818,6 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Floating Save Button */}
-      {!isUnifiedView && (
-        <motion.div 
-          initial={{ y: 100 }} 
-          animate={{ y: 0 }} 
-          className="fixed bottom-8 right-8 z-50 lg:hidden"
-        >
-          <button 
-            onClick={handleSave}
-            disabled={saving}
-            className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-display font-black italic uppercase text-sm tracking-widest transition-all shadow-2xl ${saving ? 'bg-zinc-800 text-zinc-500' : 'bg-brand text-white hover:bg-brand-light active:scale-95 shadow-brand/40'}`}
-          >
-            <Save size={20} /> {saving ? 'Sincronizando...' : 'Salvar Tudo'}
-          </button>
-        </motion.div>
-      )}
 
       {/* Notification Toast */}
       <AnimatePresence>
