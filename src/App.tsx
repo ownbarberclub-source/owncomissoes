@@ -1,22 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
-  Save, 
-  History, 
-  LogOut, 
-  Plus, 
-  Trash2,
-  AlertCircle,
-  CheckCircle2,
-  DollarSign,
-  CalendarDays,
-  Store,
-  Wallet,
-  ShieldCheck,
-  User as UserIcon,
-  Settings,
-  X
+  Save, History, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
+  DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
+  Settings, X, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,10 +14,12 @@ function App() {
   const [selectedUnit, setSelectedUnit] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<string>(new Date().toISOString().slice(0, 7));
   const [barbers, setBarbers] = useState<Barber[]>([]);
+  
   const [commissions, setCommissions] = useState<Record<string, CommissionRecord>>({});
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [guarantees, setGuarantees] = useState<Record<string, BarberGuarantee>>({});
-  const [activeTab, setActiveTab] = useState<'commissions' | 'vouchers'>('commissions');
+  
+  const [expandedBarbers, setExpandedBarbers] = useState<string[]>([]);
   const [settingsModalBarber, setSettingsModalBarber] = useState<string | null>(null);
   const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string}>({value: '', until: ''});
   const [saving, setSaving] = useState(false);
@@ -45,78 +35,46 @@ function App() {
     const hubRole  = params.get('hub_role');
 
     async function initAuth() {
-      // 1. Tenta autenticar no Supabase via senha relay (igual ao own-contatos)
       if (hubUser && hubPass) {
         try {
           const password = atob(hubPass);
           const { error: authErr } = await supabase.auth.signInWithPassword({ email: hubUser, password });
-          if (authErr) {
-            console.warn('[OWN Comissões] signInWithPassword falhou:', authErr.message);
-          } else {
-            console.log('[OWN Comissões] Autenticado no Supabase com sucesso.');
-          }
+          if (authErr) console.warn('[OWN Comissões] signInWithPassword falhou:', authErr.message);
         } catch (e: any) {
           console.warn('[OWN Comissões] Erro ao decodificar hub_pass:', e.message);
         }
       }
 
-      // 2. Define sessão local da interface
       if (hubUser && (hubToken || hubPass)) {
         let finalRole = 'operador';
-        if (hubRole === 'admin' || hubRole === 'administrador') {
-          finalRole = 'administrador';
-        }
-        const userSession = {
-          name: hubName || 'Usuário',
-          email: hubUser,
-          role: finalRole
-        };
+        if (hubRole === 'admin' || hubRole === 'administrador') finalRole = 'administrador';
+        const userSession = { name: hubName || 'Usuário', email: hubUser, role: finalRole };
         setSession(userSession);
         localStorage.setItem('@own-comissoes:session', JSON.stringify(userSession));
         window.history.replaceState({}, document.title, window.location.pathname);
       } else {
-        // 3. Tenta restaurar sessão existente do localStorage
         const saved = localStorage.getItem('@own-comissoes:session');
         if (saved) {
-          // Verifica se há sessão ativa no Supabase
           const { data: { session: supaSession } } = await supabase.auth.getSession();
-          if (supaSession) {
-            setSession(JSON.parse(saved));
-          } else {
-            // Sessão Supabase expirou — limpa e exige reautenticação via Hub
-            console.warn('[OWN Comissões] Sessão Supabase expirada. Redirecionando ao Hub.');
-            localStorage.removeItem('@own-comissoes:session');
-          }
+          if (supaSession) setSession(JSON.parse(saved));
+          else localStorage.removeItem('@own-comissoes:session');
         }
       }
     }
-
     initAuth();
   }, []);
 
-  // Fetch initial data
   useEffect(() => {
     if (!session) return;
-
     async function fetchData() {
       try {
-        console.log('[OWN Comissões] Buscando unidades...');
         const { data: unitsData, error: unitsError } = await supabase.from('previa_units').select('*');
-
-        console.log('[OWN Comissões] Unidades:', unitsData, '| Erro:', unitsError);
-
-        if (unitsError) {
-          console.error('[OWN Comissões] Error fetching units:', unitsError);
-          showNotification('error', `Falha ao carregar unidades: ${unitsError.message}`);
-        }
-
+        if (unitsError) showNotification('error', `Falha ao carregar unidades: ${unitsError.message}`);
         if (unitsData) setUnits(unitsData);
       } catch (err) {
-        console.error('[OWN Comissões] Fetch initial data failed:', err);
         showNotification('error', 'Erro de conexão com o banco de dados.');
       }
     }
-
     fetchData();
   }, [session]);
 
@@ -129,21 +87,24 @@ function App() {
       .eq('period', selectedPeriod)
       .eq('unit_id', selectedUnit);
 
+    const newComm: Record<string, CommissionRecord> = {};
+    barberList.forEach(b => {
+      newComm[b.id] = { barber_id: b.id, quinzena_1: 0, quinzena_2_avulso: 0, mes_assinatura: 0, status_q1: 'pending', status_q2: 'pending' };
+    });
+
     if (commData) {
-      const newComm: Record<string, CommissionRecord> = {};
-      barberList.forEach(b => {
-        newComm[b.id] = { barber_id: b.id, quinzena_1: 0, quinzena_2_avulso: 0, mes_assinatura: 0 };
-      });
       commData.forEach(c => {
         newComm[c.barber_id] = {
           barber_id: c.barber_id,
           quinzena_1: c.quinzena_1,
           quinzena_2_avulso: c.quinzena_2_avulso,
-          mes_assinatura: c.mes_assinatura
+          mes_assinatura: c.mes_assinatura,
+          status_q1: c.status_q1 || 'pending',
+          status_q2: c.status_q2 || 'pending'
         };
       });
-      setCommissions(newComm);
     }
+    setCommissions(newComm);
 
     const { data: voucherData } = await supabase
       .from('previa_barber_vouchers')
@@ -152,7 +113,10 @@ function App() {
       .in('barber_id', barberList.map(b => b.id));
 
     if (voucherData) {
-      setVouchers(voucherData);
+      // Compatibilidade retroativa para vales antigos sem deduct_from
+      setVouchers(voucherData.map(v => ({...v, deduct_from: v.deduct_from || 'q1'})));
+    } else {
+      setVouchers([]);
     }
 
     const { data: guarData } = await supabase
@@ -162,30 +126,20 @@ function App() {
 
     if (guarData) {
       const gMap: Record<string, BarberGuarantee> = {};
-      guarData.forEach(g => {
-        gMap[g.barber_id] = g;
-      });
+      guarData.forEach(g => { gMap[g.barber_id] = g; });
       setGuarantees(gMap);
     }
   };
 
   useEffect(() => {
     if (!selectedUnit) return;
-
     async function fetchBarbers() {
-      const { data, error } = await supabase
-        .from('previa_barbers')
-        .select('*')
-        .eq('unit_id', selectedUnit);
-      
-      if (error) console.error('Error fetching barbers:', error);
-      
+      const { data, error } = await supabase.from('previa_barbers').select('*').eq('unit_id', selectedUnit);
       if (data) {
         setBarbers(data);
         if (selectedPeriod) loadExistingData(data);
       }
     }
-
     fetchBarbers();
   }, [selectedUnit]);
 
@@ -209,7 +163,7 @@ function App() {
   const getGuaranteeForBarber = (barberId: string) => {
     const g = guarantees[barberId];
     if (!g || !g.valid_until || !g.guarantee_value) return null;
-    if (selectedPeriod > g.valid_until) return null; // Vencido
+    if (selectedPeriod > g.valid_until) return null;
 
     const totalDays = getDaysInMonth(selectedPeriod);
     const q1 = (g.guarantee_value / totalDays) * 15;
@@ -217,26 +171,36 @@ function App() {
     return { q1, q2 };
   };
 
+  const calculateTotals = (barberId: string) => {
+    const c = commissions[barberId];
+    if (!c) return { q1: 0, q2: 0, vQ1: 0, vQ2: 0 };
+    
+    const guar = getGuaranteeForBarber(barberId);
+    const baseQ1 = guar ? Math.max(c.quinzena_1, guar.q1) : c.quinzena_1;
+    const baseQ2 = guar ? Math.max(c.quinzena_2_avulso, guar.q2 - (c.mes_assinatura || 0)) : c.quinzena_2_avulso;
+    
+    const barberVouchers = vouchers.filter(v => v.barber_id === barberId);
+    const vQ1 = barberVouchers.filter(v => v.deduct_from === 'q1').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
+    const vQ2 = barberVouchers.filter(v => v.deduct_from === 'q2').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
+    
+    return {
+      q1: baseQ1 - vQ1,
+      q2: (baseQ2 + (c.mes_assinatura || 0)) - vQ2,
+      vQ1,
+      vQ2
+    };
+  };
+
   const saveGuarantee = async () => {
     if (!settingsModalBarber) return;
     setSaving(true);
     try {
       const gValue = parseFloat(tempGuarantee.value) || 0;
-      
       if (gValue === 0 || !tempGuarantee.until) {
-         // Remove guarantee
          await supabase.from('previa_barber_guarantees').delete().eq('barber_id', settingsModalBarber);
-         setGuarantees(prev => {
-            const next = {...prev};
-            delete next[settingsModalBarber];
-            return next;
-         });
+         setGuarantees(prev => { const next = {...prev}; delete next[settingsModalBarber]; return next; });
       } else {
-         const newG = {
-            barber_id: settingsModalBarber,
-            guarantee_value: gValue,
-            valid_until: tempGuarantee.until
-         };
+         const newG = { barber_id: settingsModalBarber, guarantee_value: gValue, valid_until: tempGuarantee.until };
          await supabase.from('previa_barber_guarantees').upsert(newG);
          setGuarantees(prev => ({...prev, [settingsModalBarber]: newG}));
       }
@@ -249,13 +213,12 @@ function App() {
     }
   };
 
-  const handleCommissionChange = (barberId: string, field: keyof CommissionRecord, value: string) => {
-    const numValue = parseFloat(value) || 0;
+  const handleCommissionChange = (barberId: string, field: keyof CommissionRecord, value: any) => {
     setCommissions(prev => ({
       ...prev,
       [barberId]: {
         ...prev[barberId],
-        [field]: numValue
+        [field]: value
       }
     }));
   };
@@ -277,84 +240,55 @@ function App() {
           quinzena_1: finalQ1,
           quinzena_2_avulso: finalQ2,
           mes_assinatura: c.mes_assinatura,
+          status_q1: c.status_q1 || 'pending',
+          status_q2: c.status_q2 || 'pending',
           updated_at: new Date().toISOString()
         };
       });
 
-      const { error: commError } = await supabase
-        .from('previa_manual_payments')
-        .upsert(commToSave, { onConflict: 'barber_id,period' });
-
+      const { error: commError } = await supabase.from('previa_manual_payments').upsert(commToSave, { onConflict: 'barber_id,period' });
       if (commError) throw commError;
 
-      const { error: delError } = await supabase
-        .from('previa_barber_vouchers')
-        .delete()
-        .eq('period', selectedPeriod)
-        .in('barber_id', barbers.map(b => b.id));
-
+      const { error: delError } = await supabase.from('previa_barber_vouchers').delete()
+        .eq('period', selectedPeriod).in('barber_id', barbers.map(b => b.id));
       if (delError) throw delError;
 
       if (vouchers.length > 0) {
         const vouchersToSave = vouchers.map(v => ({
           barber_id: v.barber_id,
           period: selectedPeriod,
-          value: v.value,
+          value: parseFloat(v.value as any) || 0,
           description: v.description,
+          deduct_from: v.deduct_from,
           date: v.date
         }));
-
-        const { error: vouchError } = await supabase
-          .from('previa_barber_vouchers')
-          .insert(vouchersToSave);
-
+        const { error: vouchError } = await supabase.from('previa_barber_vouchers').insert(vouchersToSave);
         if (vouchError) throw vouchError;
       }
-      
       showNotification('success', 'Dados salvos com sucesso!');
     } catch (error: any) {
-      console.error(error);
       showNotification('error', `Erro ao salvar: ${error.message}`);
     } finally {
       setSaving(false);
     }
   };
 
+  const toggleExpand = (barberId: string) => {
+    if (expandedBarbers.includes(barberId)) setExpandedBarbers(prev => prev.filter(id => id !== barberId));
+    else setExpandedBarbers(prev => [...prev, barberId]);
+  };
+
   const addVoucher = (barberId: string) => {
-    const newVoucher: Voucher = {
-      barber_id: barberId,
-      value: 0,
-      description: '',
-      date: new Date().toISOString().split('T')[0]
-    };
-    setVouchers([...vouchers, newVoucher]);
-  };
-
-  const updateVoucher = (index: number, field: keyof Voucher, value: any) => {
-    const updated = [...vouchers];
-    updated[index] = { ...updated[index], [field]: value };
-    setVouchers(updated);
-  };
-
-  const removeVoucher = (index: number) => {
-    setVouchers(vouchers.filter((_, i) => i !== index));
+    setVouchers([...vouchers, { barber_id: barberId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0] }]);
   };
 
   if (!session) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 font-sans">
         <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-10 text-center shadow-2xl">
-          <div className="w-20 h-20 bg-zinc-950 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl border border-zinc-800 p-4">
-            <img src="/logo.png" alt="OWN Logo" className="w-full h-full object-contain brightness-0 invert" />
-          </div>
           <h1 className="text-2xl font-black text-white mb-4 tracking-tight uppercase italic">Acesso Restrito</h1>
-          <p className="text-zinc-400 mb-8 leading-relaxed">
-            Este sistema é exclusivo para operadores autorizados.<br />Por favor, acesse pelo <strong className="text-white font-bold">OWN Hub</strong>.
-          </p>
-          <a 
-            href="https://ownpainel.vercel.app" 
-            className="flex items-center justify-center gap-3 bg-brand text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95"
-          >
+          <p className="text-zinc-400 mb-8 leading-relaxed">Este sistema é exclusivo para operadores autorizados.</p>
+          <a href="https://ownpainel.vercel.app" className="flex items-center justify-center gap-3 bg-brand text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 active:scale-95">
             → Ir para o Hub
           </a>
         </div>
@@ -377,44 +311,15 @@ function App() {
                  OWN <span className="text-brand">COMISSÕES</span>
                </h1>
             </div>
-            
-            <nav className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('commissions')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'commissions' 
-                    ? 'bg-zinc-800 text-brand shadow-inner' 
-                    : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50'
-                }`}
-              >
-                Comissões
-              </button>
-              <button
-                onClick={() => setActiveTab('vouchers')}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === 'vouchers' 
-                    ? 'bg-zinc-800 text-brand shadow-inner' 
-                    : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/50'
-                }`}
-              >
-                Vales
-              </button>
-            </nav>
           </div>
-
           <div className="flex items-center gap-4">
             <div className="hidden md:flex flex-col items-end">
               <p className="text-sm font-black text-zinc-200 flex items-center gap-2">
                 {isAdmin ? <ShieldCheck size={14} className="text-brand" /> : <UserIcon size={14} className="text-zinc-500" />}
                 {session.name}
               </p>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono">{session.role}</p>
             </div>
-            <button
-              onClick={() => { localStorage.removeItem('@own-comissoes:session'); setSession(null); }}
-              className="p-2.5 text-zinc-500 hover:text-brand hover:bg-brand/10 rounded-xl transition-all border border-transparent hover:border-brand/20"
-              title="Sair"
-            >
+            <button onClick={() => { localStorage.removeItem('@own-comissoes:session'); setSession(null); }} className="p-2.5 text-zinc-500 hover:text-brand hover:bg-brand/10 rounded-xl transition-all">
               <LogOut size={20} />
             </button>
           </div>
@@ -428,11 +333,7 @@ function App() {
               <Store size={14} className="group-hover:text-brand transition-colors" />
               <label className="text-[10px] font-black uppercase tracking-widest">Unidade</label>
             </div>
-            <select 
-              className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none"
-              value={selectedUnit}
-              onChange={(e) => setSelectedUnit(e.target.value)}
-            >
+            <select className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none" value={selectedUnit} onChange={(e) => setSelectedUnit(e.target.value)}>
               <option value="" className="bg-zinc-900">Selecione uma unidade</option>
               {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-900">{u.name}</option>)}
             </select>
@@ -443,193 +344,216 @@ function App() {
               <CalendarDays size={14} className="group-hover:text-brand transition-colors" />
               <label className="text-[10px] font-black uppercase tracking-widest">Mês de Referência</label>
             </div>
-            <input 
-              type="month"
-              className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none"
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-            />
+            <input type="month" className="bg-transparent text-lg font-bold text-white outline-none cursor-pointer appearance-none" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
           </div>
         </div>
 
         <div className="relative">
           {selectedUnit ? (
             <AnimatePresence mode="wait">
-              {activeTab === 'commissions' ? (
-                <motion.div 
-                  key="comm"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl overflow-hidden"
-                >
-                  {barbers.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <p className="text-zinc-500">Nenhum barbeiro encontrado para esta unidade.</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse whitespace-nowrap">
-                        <thead>
-                          <tr className="bg-zinc-950/50 border-b border-zinc-800">
-                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
-                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">Período 01-15</th>
-                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">16-Fim (Avulsos)</th>
-                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-48">Assinaturas</th>
-                            <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-16 text-center">⚙️</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-zinc-800/50">
-                          {barbers.map(barber => (
-                            <tr key={barber.id} className="hover:bg-zinc-800/20 transition-colors group">
-                              <td className="p-5">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase shadow-inner">
-                                    {barber.name.substring(0, 2)}
-                                  </div>
-                                  <div>
-                                    <p className="text-sm font-black text-white group-hover:text-brand transition-colors">{barber.name}</p>
-                                    <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">{barber.id.slice(0, 8)}</p>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="p-5 align-top">
-                                <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
-                                  <input 
-                                    type="number"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
-                                    placeholder="0,00"
-                                    value={commissions[barber.id]?.quinzena_1 || ''}
-                                    onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', e.target.value)}
-                                  />
-                                </div>
-                                {getGuaranteeForBarber(barber.id) && (
-                                  <p className="text-[9px] text-brand/80 mt-2 flex items-center gap-1 font-bold tracking-wide uppercase"><ShieldCheck size={10} /> Gar: R$ {getGuaranteeForBarber(barber.id)?.q1.toFixed(2)}</p>
-                                )}
-                              </td>
-                              <td className="p-5 align-top">
-                                <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
-                                  <input 
-                                    type="number"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
-                                    placeholder="0,00"
-                                    value={commissions[barber.id]?.quinzena_2_avulso || ''}
-                                    onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', e.target.value)}
-                                  />
-                                </div>
-                                {getGuaranteeForBarber(barber.id) && (
-                                  <p className="text-[9px] text-brand/80 mt-2 flex items-center gap-1 font-bold tracking-wide uppercase"><ShieldCheck size={10} /> Gar (c/ Ass): R$ {getGuaranteeForBarber(barber.id)?.q2.toFixed(2)}</p>
-                                )}
-                              </td>
-                              <td className="p-5 align-top">
-                                <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
-                                  <input 
-                                    type="number"
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20 transition-all text-sm"
-                                    placeholder="0,00"
-                                    value={commissions[barber.id]?.mes_assinatura || ''}
-                                    onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', e.target.value)}
-                                  />
-                                </div>
-                              </td>
-                              <td className="p-5 align-top text-center">
-                                <button 
-                                  onClick={() => {
-                                    setSettingsModalBarber(barber.id);
-                                    const g = guarantees[barber.id];
-                                    setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
-                                  }}
-                                  className="p-2.5 bg-zinc-950 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-zinc-800 hover:border-brand/30 rounded-xl transition-all inline-flex items-center justify-center"
-                                  title="Configurar Garantia"
-                                >
-                                  <Settings size={16} />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="vouch"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6"
-                >
-                  {barbers.map(barber => (
-                    <div key={barber.id} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-xl">
-                      <div className="flex items-center justify-between mb-8">
-                        <div>
-                          <h3 className="text-2xl font-black text-white">{barber.name}</h3>
-                          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Gestão de Vales e Adiantamentos</p>
-                        </div>
-                        <button 
-                          onClick={() => addVoucher(barber.id)}
-                          className="flex items-center gap-2 text-brand hover:text-brand-light transition-all text-xs font-black uppercase tracking-widest"
-                        >
-                          <Plus size={18} /> Adicionar Vale
-                        </button>
-                      </div>
+              <motion.div key="comm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-xl overflow-hidden">
+                {barbers.length === 0 ? (
+                  <div className="py-12 text-center"><p className="text-zinc-500">Nenhum barbeiro encontrado para esta unidade.</p></div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
+                      <thead>
+                        <tr className="bg-zinc-950/50 border-b border-zinc-800">
+                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
+                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-64">Quinzena 1</th>
+                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-96">Quinzena 2</th>
+                          <th className="p-5 text-[10px] font-black text-zinc-500 uppercase tracking-widest w-32 text-center">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-800/50">
+                        {barbers.map(barber => {
+                          const isExpanded = expandedBarbers.includes(barber.id);
+                          const totals = calculateTotals(barber.id);
+                          const barberVouchers = vouchers.filter(v => v.barber_id === barber.id);
+                          const statusQ1 = commissions[barber.id]?.status_q1 || 'pending';
+                          const statusQ2 = commissions[barber.id]?.status_q2 || 'pending';
 
-                      <div className="space-y-4">
-                        {vouchers.filter(v => v.barber_id === barber.id).length === 0 ? (
-                          <div className="py-12 text-center border-2 border-dashed border-zinc-800 rounded-2xl">
-                             <Wallet className="text-zinc-700 mx-auto mb-3" size={32} />
-                             <p className="text-zinc-600 text-sm font-medium">Nenhum vale lançado para este barbeiro.</p>
-                          </div>
-                        ) : (
-                          vouchers.map((v, idx) => v.barber_id === barber.id && (
-                            <motion.div 
-                              key={idx} 
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="flex flex-col md:flex-row gap-4 items-end bg-zinc-950 border border-zinc-800 p-5 rounded-2xl hover:border-zinc-700 transition-all group"
-                            >
-                              <div className="flex-1 w-full space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Descrição do Lançamento</label>
-                                <input 
-                                  type="text"
-                                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-brand/50 transition-all"
-                                  placeholder="Ex: Vale combustível, Adiantamento, Ajuste..."
-                                  value={v.description}
-                                  onChange={(e) => updateVoucher(vouchers.indexOf(v), 'description', e.target.value)}
-                                />
-                              </div>
-                              <div className="w-full md:w-48 space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Valor</label>
-                                <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                                  <input 
-                                    type="number"
-                                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-white font-bold outline-none focus:border-brand/50 transition-all"
-                                    placeholder="0,00"
-                                    value={v.value || ''}
-                                    onChange={(e) => updateVoucher(vouchers.indexOf(v), 'value', parseFloat(e.target.value) || 0)}
-                                  />
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => removeVoucher(vouchers.indexOf(v))}
-                                className="p-3.5 text-zinc-600 hover:text-brand hover:bg-brand/10 rounded-xl transition-all border border-transparent hover:border-brand/20"
-                                title="Remover Vale"
-                              >
-                                <Trash2 size={20} />
-                              </button>
-                            </motion.div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
+                          return (
+                            <React.Fragment key={barber.id}>
+                              <tr className="hover:bg-zinc-800/20 transition-colors group">
+                                <td className="p-5 align-top">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-400 font-black text-xs uppercase shadow-inner">
+                                      {barber.name.substring(0, 2)}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-black text-white group-hover:text-brand transition-colors">{barber.name}</p>
+                                      <p className="text-[10px] text-zinc-500 font-mono mt-0.5 uppercase">{barber.id.slice(0, 8)}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                
+                                <td className="p-5 align-top bg-zinc-900/30">
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto (Dia 01-15)</label>
+                                      <div className="relative">
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                        <input 
+                                          type="number"
+                                          className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-9 pr-3 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                          placeholder="0,00"
+                                          value={commissions[barber.id]?.quinzena_1 === 0 ? '' : commissions[barber.id]?.quinzena_1}
+                                          onChange={(e) => handleCommissionChange(barber.id, 'quinzena_1', parseFloat(e.target.value) || 0)}
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black uppercase text-zinc-500">Líquido A Pagar</span>
+                                        <span className={`text-sm font-black ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
+                                      </div>
+                                      <button 
+                                        onClick={() => handleCommissionChange(barber.id, 'status_q1', statusQ1 === 'paid' ? 'pending' : 'paid')}
+                                        className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                                      >
+                                        {statusQ1 === 'paid' ? '✅ Já Pago' : 'Pendente'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="p-5 align-top">
+                                  <div className="space-y-3">
+                                    <div className="flex gap-2">
+                                      <div className="flex-1">
+                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto Avulso (16-Fim)</label>
+                                        <div className="relative">
+                                          <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <input 
+                                            type="number"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                            placeholder="0"
+                                            value={commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso}
+                                            onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Bruto Assinaturas</label>
+                                        <div className="relative">
+                                          <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                                          <input 
+                                            type="number"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2 pl-7 pr-2 text-white font-bold outline-none focus:border-brand/50 transition-all text-sm"
+                                            placeholder="0"
+                                            value={commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura}
+                                            onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/50">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black uppercase text-zinc-500">Líquido A Pagar</span>
+                                        <span className={`text-sm font-black ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
+                                      </div>
+                                      <button 
+                                        onClick={() => handleCommissionChange(barber.id, 'status_q2', statusQ2 === 'paid' ? 'pending' : 'paid')}
+                                        className={`w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700 hover:text-white'}`}
+                                      >
+                                        {statusQ2 === 'paid' ? '✅ Já Pago' : 'Pendente'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="p-5 align-top text-center">
+                                  <div className="flex flex-col items-center gap-2">
+                                    <button 
+                                      onClick={() => {
+                                        setSettingsModalBarber(barber.id);
+                                        const g = guarantees[barber.id];
+                                        setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
+                                      }}
+                                      className="w-full p-2.5 bg-zinc-950 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-zinc-800 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
+                                      title="Configurar Garantia"
+                                    >
+                                      <Settings size={14} /> <span className="text-[10px] font-black uppercase">Garantia</span>
+                                    </button>
+                                    
+                                    <button 
+                                      onClick={() => toggleExpand(barber.id)}
+                                      className={`w-full p-2.5 border rounded-xl transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase ${isExpanded || barberVouchers.length > 0 ? 'bg-brand/10 text-brand border-brand/30' : 'bg-zinc-950 text-zinc-500 border-zinc-800 hover:bg-zinc-800'}`}
+                                    >
+                                      <Wallet size={14} /> 
+                                      {barberVouchers.length > 0 ? `${barberVouchers.length} Vales` : 'Add Vale'}
+                                      {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+
+                              {/* Linha Expansível para Vales */}
+                              <AnimatePresence>
+                                {isExpanded && (
+                                  <motion.tr
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="bg-zinc-950/80 border-b-4 border-zinc-900"
+                                  >
+                                    <td colSpan={4} className="p-6">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-sm font-black text-brand uppercase tracking-widest flex items-center gap-2"><Wallet size={16}/> Gestão de Vales e Adiantamentos</h4>
+                                        <button onClick={() => addVoucher(barber.id)} className="flex items-center gap-2 text-brand hover:text-brand-light transition-all text-[10px] font-black uppercase tracking-widest bg-brand/10 px-3 py-1.5 rounded-lg">
+                                          <Plus size={14} /> Novo Vale
+                                        </button>
+                                      </div>
+                                      
+                                      {barberVouchers.length === 0 ? (
+                                        <p className="text-xs text-zinc-500 italic">Nenhum vale lançado para este barbeiro neste mês.</p>
+                                      ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          {barberVouchers.map((v, idx) => {
+                                            const globalIdx = vouchers.indexOf(v);
+                                            return (
+                                              <div key={idx} className="bg-zinc-900 border border-zinc-800 p-4 rounded-xl flex flex-col gap-3">
+                                                <div className="flex gap-3">
+                                                  <div className="flex-1">
+                                                    <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Descrição</label>
+                                                    <input type="text" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-white text-xs outline-none" placeholder="Ex: Adiantamento" value={v.description} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].description = e.target.value; setVouchers(updated); }} />
+                                                  </div>
+                                                  <div className="w-24">
+                                                    <label className="text-[9px] font-black text-zinc-600 uppercase mb-1 block">Valor (R$)</label>
+                                                    <input type="number" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-white text-xs font-bold outline-none" placeholder="0" value={v.value || ''} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].value = parseFloat(e.target.value) || 0; setVouchers(updated); }} />
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1">
+                                                  <div className="flex items-center gap-2 bg-zinc-950 p-1 rounded-lg border border-zinc-800">
+                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q1'; setVouchers(updated); }} className={`px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all ${v.deduct_from === 'q1' ? 'bg-brand text-white' : 'text-zinc-500 hover:bg-zinc-800'}`}>
+                                                      Descontar Q1
+                                                    </button>
+                                                    <button onClick={() => { const updated = [...vouchers]; updated[globalIdx].deduct_from = 'q2'; setVouchers(updated); }} className={`px-3 py-1 text-[9px] font-black uppercase rounded-md transition-all ${v.deduct_from === 'q2' ? 'bg-brand text-white' : 'text-zinc-500 hover:bg-zinc-800'}`}>
+                                                      Descontar Q2
+                                                    </button>
+                                                  </div>
+                                                  <button onClick={() => setVouchers(vouchers.filter((_, i) => i !== globalIdx))} className="p-1.5 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all" title="Excluir Vale">
+                                                    <Trash2 size={16} />
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      )}
+                                    </td>
+                                  </motion.tr>
+                                )}
+                              </AnimatePresence>
+                            </React.Fragment>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
             </AnimatePresence>
           ) : (
             <div className="bg-zinc-900/50 border-2 border-dashed border-zinc-800 rounded-[40px] p-24 text-center">
@@ -637,41 +561,16 @@ function App() {
                 <AlertCircle className="text-zinc-600" size={48} />
               </div>
               <h2 className="text-2xl font-black text-white mb-3">Selecione uma unidade para começar</h2>
-              <p className="text-zinc-500 max-w-md mx-auto leading-relaxed">
-                Escolha a unidade e o mês de referência no menu superior para visualizar os barbeiros e realizar os lançamentos.
-              </p>
             </div>
           )}
         </div>
       </main>
 
-      {(selectedUnit && (isAdmin || activeTab === 'commissions')) && (
+      {selectedUnit && (
         <div className="fixed bottom-10 inset-x-0 flex justify-center z-50 pointer-events-none">
           <div className="pointer-events-auto">
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className={`flex items-center gap-3 px-10 py-5 rounded-[24px] text-base font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${
-                saving 
-                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' 
-                  : 'bg-brand text-white hover:bg-brand-light shadow-brand/40'
-              }`}
-            >
-              {saving ? (
-                <>
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  >
-                    <History size={24} />
-                  </motion.div>
-                  Salvando no Banco...
-                </>
-              ) : (
-                <>
-                  <Save size={24} /> Salvar Alterações
-                </>
-              )}
+            <button onClick={handleSave} disabled={saving} className={`flex items-center gap-3 px-10 py-5 rounded-[24px] text-base font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${saving ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-brand text-white hover:bg-brand-light shadow-brand/40'}`}>
+              {saving ? <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><History size={24} /></motion.div>Salvando...</> : <><Save size={24} /> Salvar Alterações</>}
             </button>
           </div>
         </div>
@@ -679,25 +578,8 @@ function App() {
 
       <AnimatePresence>
         {notification && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className={`fixed top-24 right-8 z-[100] px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl border ${
-              notification.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                : 'bg-brand/10 border-brand/20 text-brand'
-            }`}
-          >
-            {notification.type === 'success' ? (
-              <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                <CheckCircle2 size={20} />
-              </div>
-            ) : (
-              <div className="w-8 h-8 bg-brand/20 rounded-full flex items-center justify-center">
-                <AlertCircle size={20} />
-              </div>
-            )}
+          <motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className={`fixed top-24 right-8 z-[100] px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl border ${notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-brand/10 border-brand/20 text-brand'}`}>
+            {notification.type === 'success' ? <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center"><CheckCircle2 size={20} /></div> : <div className="w-8 h-8 bg-brand/20 rounded-full flex items-center justify-center"><AlertCircle size={20} /></div>}
             <p className="font-bold text-sm">{notification.message}</p>
           </motion.div>
         )}
@@ -706,41 +588,18 @@ function App() {
       {settingsModalBarber && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 shadow-2xl relative">
-            <button 
-              onClick={() => setSettingsModalBarber(null)}
-              className="absolute top-6 right-6 text-zinc-500 hover:text-white"
-            >
-              <X size={24} />
-            </button>
+            <button onClick={() => setSettingsModalBarber(null)} className="absolute top-6 right-6 text-zinc-500 hover:text-white"><X size={24} /></button>
             <h2 className="text-xl font-black text-white mb-6">Garantia Prometida</h2>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-xs font-black text-zinc-500 uppercase">Valor Total do Mês (R$)</label>
-                <input 
-                  type="number"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none"
-                  placeholder="Ex: 3000"
-                  value={tempGuarantee.value}
-                  onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))}
-                />
+                <input type="number" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none" placeholder="Ex: 3000" value={tempGuarantee.value} onChange={(e) => setTempGuarantee(prev => ({...prev, value: e.target.value}))} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-zinc-500 uppercase">Válido Até (Mês)</label>
-                <input 
-                  type="month"
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none"
-                  value={tempGuarantee.until}
-                  onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))}
-                />
+                <input type="month" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white outline-none" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
               </div>
-              <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-zinc-800/50">
-                O sistema dividirá o valor pelo número de dias do mês atual e aplicará a fração na hora de salvar, sempre escolhendo o maior valor (digitado vs garantia). Deixe em branco para desativar.
-              </p>
-              <button 
-                onClick={saveGuarantee}
-                disabled={saving}
-                className="w-full mt-4 bg-brand text-white py-4 rounded-xl font-black uppercase text-sm hover:bg-brand-light transition-all"
-              >
+              <button onClick={saveGuarantee} disabled={saving} className="w-full mt-4 bg-brand text-white py-4 rounded-xl font-black uppercase text-sm hover:bg-brand-light transition-all">
                 {saving ? 'Salvando...' : 'Salvar Garantia'}
               </button>
             </div>

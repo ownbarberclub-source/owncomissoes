@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS previa_manual_payments (
   quinzena_1 NUMERIC DEFAULT 0,
   quinzena_2_avulso NUMERIC DEFAULT 0,
   mes_assinatura NUMERIC DEFAULT 0,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid')),
+  status_q1 TEXT DEFAULT 'pending' CHECK (status_q1 IN ('pending', 'paid')),
+  status_q2 TEXT DEFAULT 'pending' CHECK (status_q2 IN ('pending', 'paid')),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(barber_id, period)
@@ -42,6 +43,7 @@ CREATE TABLE IF NOT EXISTS previa_barber_vouchers (
   period TEXT NOT NULL, -- Mês e ano no formato YYYY-MM
   value NUMERIC DEFAULT 0,
   description TEXT,
+  deduct_from TEXT DEFAULT 'q1' CHECK (deduct_from IN ('q1', 'q2')),
   date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT now()
 );

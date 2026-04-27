@@ -20,6 +20,8 @@ export interface CommissionRecord {
   quinzena_1: number;
   quinzena_2_avulso: number;
   mes_assinatura: number;
+  status_q1?: 'pending' | 'paid';
+  status_q2?: 'pending' | 'paid';
 }
 
 export interface Voucher {
@@ -27,6 +29,7 @@ export interface Voucher {
   barber_id: string;
   value: number;
   description: string;
+  deduct_from: 'q1' | 'q2';
   date: string;
 }
 
