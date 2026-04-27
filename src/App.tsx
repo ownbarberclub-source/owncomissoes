@@ -789,23 +789,6 @@ function App() {
         </div>
       </main>
 
-      {selectedUnit && (
-        <div className="fixed bottom-10 inset-x-0 flex justify-center z-50 pointer-events-none">
-          <div className="pointer-events-auto">
-            <button 
-              onClick={handleSave} 
-              disabled={saving} 
-              className={`group flex items-center gap-3 px-12 py-5 rounded-[24px] text-base font-display font-black italic uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${saving ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-brand text-white hover:bg-brand-light shadow-brand/40 hover:-translate-y-1'}`}
-            >
-              {saving ? (
-                <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><History size={24} /></motion.div>Salvando...</>
-              ) : (
-                <><Save size={24} className="group-hover:scale-110 transition-transform" /> Salvar Alterações</>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
 
       <AnimatePresence>
         {notification && (
@@ -819,22 +802,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Notification Toast */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-6"
-          >
-            <div className={`p-5 rounded-2xl border backdrop-blur-xl shadow-2xl flex items-center gap-4 ${notification.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-brand/10 border-brand/30 text-brand'}`}>
-              {notification.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
-              <p className="text-sm font-black uppercase tracking-widest">{notification.message}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Modal de Garantia */}
       <AnimatePresence>
