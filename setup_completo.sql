@@ -15,6 +15,9 @@ ALTER TABLE previa_barbers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso publico previa_barbers" ON previa_barbers;
 CREATE POLICY "Acesso publico previa_barbers" ON previa_barbers FOR ALL USING (true);
 
+-- Adicionar campo de Chave Pix se não existir
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS pix_key TEXT;
+
 
 -- 2. Tabela de lançamentos manuais de comissão
 CREATE TABLE IF NOT EXISTS previa_manual_payments (

@@ -10,6 +10,7 @@ export interface Barber {
   nickname?: string;
   photo_url?: string;
   is_hidden_crm?: boolean;
+  pix_key?: string;
 }
 
 export interface BarberGuarantee {

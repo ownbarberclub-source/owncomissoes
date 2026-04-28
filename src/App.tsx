@@ -25,7 +25,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -538,12 +538,19 @@ function App() {
                                     <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shadow-inner group-hover:border-brand/30 transition-all">
                                       {barber.name.substring(0, 2)}
                                     </div>
-                                    <div>
-                                      <p className="text-base font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight">{barber.name}</p>
-                                      <p className="text-xs text-zinc-500 font-bold mt-1 uppercase tracking-widest opacity-60">
-                                        {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
-                                      </p>
-                                    </div>
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <p className="text-base font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight">{barber.name}</p>
+                                          {barbers.find(b => b.id === barber.id)?.pix_key && (
+                                            <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter">
+                                              PIX: {barbers.find(b => b.id === barber.id)?.pix_key}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-zinc-500 font-bold mt-1 uppercase tracking-widest opacity-60">
+                                          {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
+                                        </p>
+                                      </div>
                                   </div>
                                 </td>
                                       <td className="p-6 align-top bg-white/[0.01]">
@@ -845,13 +852,20 @@ function App() {
                     <option value="" className="bg-zinc-950">Selecione Unidade</option>
                     {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
                   </select>
+                  <input 
+                    type="text" 
+                    placeholder="Chave Pix" 
+                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                    value={newProfessional.pix_key}
+                    onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
+                  />
                   <button 
                     onClick={async () => {
                       if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
                       const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                       if (error) return showNotification('error', error.message);
                       setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true });
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
                     className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all"
@@ -867,6 +881,7 @@ function App() {
                     <tr className="border-b border-white/10">
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Unidade</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chave Pix</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ocultar no CRM</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ações</th>
                     </tr>
@@ -876,6 +891,20 @@ function App() {
                       <tr key={b.id} className="group">
                         <td className="py-4 text-sm font-bold text-white italic uppercase">{b.name}</td>
                         <td className="py-4 text-xs text-zinc-500 font-bold">{units.find(u => u.id === b.unit_id)?.name}</td>
+                        <td className="py-4">
+                          <input 
+                            type="text"
+                            className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-xs text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                            value={b.pix_key || ''}
+                            placeholder="Sem chave"
+                            onChange={async (e) => {
+                              const newVal = e.target.value;
+                              const { error } = await supabase.from('previa_barbers').update({ pix_key: newVal }).eq('id', b.id);
+                              if (error) return showNotification('error', error.message);
+                              setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: newVal} : x));
+                            }}
+                          />
+                        </td>
                         <td className="py-4 text-center">
                           <button 
                             onClick={async () => {
