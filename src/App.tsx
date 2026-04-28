@@ -4,7 +4,7 @@ import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSess
 import { 
   Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
-  Settings, X, ChevronDown, ChevronUp, Pencil
+  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -560,35 +560,38 @@ function App() {
                                         <p className="text-lg font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight">
                                           {barber.name}
                                         </p>
-                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                        <div className="flex flex-wrap items-center gap-3 mt-3">
                                           {barbers.find(b => b.id === barber.id)?.pix_key && (
-                                            <div className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
-                                              PIX: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
+                                            <div className="bg-emerald-500/10 text-emerald-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-emerald-500/20 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/5 hover:bg-emerald-500/20 transition-all cursor-default">
+                                              <Smartphone size={14} className="opacity-50" />
+                                              PIX: <span className="text-zinc-100 font-mono text-xs">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
                                             </div>
                                           )}
                                           {barbers.find(b => b.id === barber.id)?.cnpj && (
-                                            <div className="bg-blue-500/10 text-blue-400 text-[9px] font-black px-2 py-1 rounded-lg border border-blue-500/20 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
-                                              CNPJ: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.cnpj}</span>
+                                            <div className="bg-blue-500/10 text-blue-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-blue-500/20 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/5 hover:bg-blue-500/20 transition-all cursor-default">
+                                              <Building2 size={14} className="opacity-50" />
+                                              CNPJ: <span className="text-zinc-100 font-mono text-xs">{barbers.find(b => b.id === barber.id)?.cnpj}</span>
                                             </div>
                                           )}
                                           {barbers.find(b => b.id === barber.id)?.gov_user && (
-                                            <div className="bg-white/5 text-zinc-500 text-[9px] font-black px-2 py-1 rounded-lg border border-white/10 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
-                                              GOV: <span className="text-zinc-300">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
-                                              <span className="opacity-30">|</span>
-                                              <span className="text-zinc-500 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                            <div className="bg-white/5 text-zinc-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-white/10 uppercase tracking-wider flex items-center gap-2 shadow-lg hover:bg-white/10 transition-all cursor-default">
+                                              <Lock size={14} className="opacity-50" />
+                                              GOV: <span className="text-zinc-100">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
+                                              <span className="opacity-20 mx-1">|</span>
+                                              <span className="text-zinc-400 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
                                             </div>
                                           )}
                                         </div>
-                                        <div className="flex items-center gap-3 mt-2">
-                                          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest opacity-60">
-                                            {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
+                                        <div className="flex items-center gap-4 mt-4">
+                                          <p className="text-[11px] text-zinc-600 font-black uppercase tracking-[0.2em] opacity-40">
+                                            ID: {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
                                           </p>
                                           <div className="flex items-center gap-2">
                                             <button 
                                               onClick={() => handleCommissionChange(barber.id, 'tax_paid', !commissions[barber.id]?.tax_paid)}
-                                              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter border transition-all ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400'}`}
+                                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all shadow-sm ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400'}`}
                                             >
-                                              <DollarSign size={10} /> {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
+                                              <DollarSign size={12} className={commissions[barber.id]?.tax_paid ? 'animate-pulse' : ''} /> {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
                                             </button>
                                           </div>
                                         </div>
