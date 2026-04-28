@@ -538,16 +538,17 @@ function App() {
                                     <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shadow-inner group-hover:border-brand/30 transition-all">
                                       {barber.name.substring(0, 2)}
                                     </div>
-                                      <div>
-                                        <div className="flex items-center gap-2">
-                                          <p className="text-base font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight">{barber.name}</p>
-                                          {barbers.find(b => b.id === barber.id)?.pix_key && (
-                                            <span className="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-tighter">
-                                              PIX: {barbers.find(b => b.id === barber.id)?.pix_key}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <p className="text-xs text-zinc-500 font-bold mt-1 uppercase tracking-widest opacity-60">
+                                      <div className="flex flex-col gap-1">
+                                        <p className="text-lg font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight">{barber.name}</p>
+                                        {barbers.find(b => b.id === barber.id)?.pix_key && (
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <div className="bg-emerald-500/20 text-emerald-400 text-[11px] font-black px-3 py-1.5 rounded-xl border border-emerald-500/30 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+                                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                              PIX: <span className="text-white text-xs">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
+                                            </div>
+                                          </div>
+                                        )}
+                                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest opacity-60">
                                           {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
                                         </p>
                                       </div>
