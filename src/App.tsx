@@ -457,10 +457,14 @@ function App() {
             <div className="flex items-center gap-3">
               {isAdmin && (
                 <button 
-                  onClick={() => setManageProfessionalsModal(true)}
-                  className="hidden sm:flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-white/10 transition-all"
+                  onClick={() => { setManageProfessionalsModal(!manageProfessionalsModal); setEditingBarberId(null); }}
+                  className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${
+                    manageProfessionalsModal
+                      ? 'bg-brand text-white border-brand/50 shadow-lg shadow-brand/20'
+                      : 'bg-white/5 hover:bg-white/10 text-white border-white/10'
+                  }`}
                 >
-                  <UserIcon size={14} className="text-brand" /> Profissionais
+                  <UserIcon size={14} /> {manageProfessionalsModal ? 'Voltar ao Fechamento' : 'Profissionais'}
                 </button>
               )}
               <div className="hidden md:flex flex-col items-end">
@@ -946,80 +950,83 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Modal de Gestão de Profissionais */}
+      {/* Modal de Gestão de Profissionais — convertido para View Inline */}
       <AnimatePresence>
         {manageProfessionalsModal && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-[32px] w-full max-w-2xl p-10 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
-              <div className="absolute top-0 left-0 w-full h-1 bg-brand opacity-50" />
-              <button onClick={() => setManageProfessionalsModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
-              
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-brand/10 flex items-center justify-center text-brand">
-                  <UserIcon size={28} />
-                </div>
+          <div className="fixed inset-0 z-[70] bg-black overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 60 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 space-y-6"
+            >
+              {/* Topo da view */}
+              <div className="flex items-center gap-4 pt-2">
+                <button
+                  onClick={() => { setManageProfessionalsModal(false); setEditingBarberId(null); }}
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-white/10 transition-all"
+                >
+                  <ChevronDown size={14} className="rotate-90" /> Voltar
+                </button>
                 <div>
-                  <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tight">Gestão de Profissionais</h2>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Controle de quem entra nos fechamentos e CRM</p>
+                  <h2 className="text-2xl font-display font-black text-white italic uppercase tracking-tighter">Gestão de <span className="text-brand">Profissionais</span></h2>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Cadastro, edição e configuração de profissionais</p>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-8">
-                <h3 className="text-xs font-black text-white uppercase tracking-widest mb-4">Novo Profissional</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Formulário de Novo Profissional */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 shadow-2xl">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <Plus size={16} className="text-brand" /> Novo Profissional
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <input 
-                    type="text" 
-                    placeholder="Nome Completo" 
-                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                    type="text" placeholder="Nome Completo"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
                     value={newProfessional.name}
                     onChange={(e) => setNewProfessional({...newProfessional, name: e.target.value})}
                   />
                   <select 
-                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all appearance-none"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all appearance-none"
                     value={newProfessional.unit_id}
                     onChange={(e) => setNewProfessional({...newProfessional, unit_id: e.target.value})}
                   >
                     <option value="" className="bg-zinc-950">Selecione Unidade</option>
                     {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
                   </select>
+                  <select 
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                    value={newProfessional.category}
+                    onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
+                  >
+                    <option value="barbeiro" className="bg-zinc-950">Categoria: Barbeiro</option>
+                    <option value="adm" className="bg-zinc-950">Categoria: ADM</option>
+                  </select>
                   <input 
-                    type="text" 
-                    placeholder="Chave Pix" 
-                    className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                    type="text" placeholder="Chave Pix"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
                     value={newProfessional.pix_key}
                     onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
                   />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:col-span-3">
-                    <input 
-                      type="text" 
-                      placeholder="Login Gov.br" 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
-                      value={newProfessional.gov_user}
-                      onChange={(e) => setNewProfessional({...newProfessional, gov_user: e.target.value})}
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="Senha Gov.br" 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
-                      value={newProfessional.gov_pass}
-                      onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="CNPJ" 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-1"
-                      value={newProfessional.cnpj}
-                      onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
-                    />
-                    <select 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-1"
-                      value={newProfessional.category}
-                      onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
-                    >
-                      <option value="barbeiro" className="bg-zinc-950">Categoria: Barbeiro</option>
-                      <option value="adm" className="bg-zinc-950">Categoria: ADM</option>
-                    </select>
-                  </div>
+                  <input 
+                    type="text" placeholder="CNPJ"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.cnpj}
+                    onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
+                  />
+                  <input 
+                    type="text" placeholder="Login Gov.br"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.gov_user}
+                    onChange={(e) => setNewProfessional({...newProfessional, gov_user: e.target.value})}
+                  />
+                  <input 
+                    type="text" placeholder="Senha Gov.br"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.gov_pass}
+                    onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
+                  />
                   <button 
                     onClick={async () => {
                       if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
@@ -1029,163 +1036,161 @@ function App() {
                       setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
-                    className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all sm:col-span-3"
+                    className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 sm:col-span-2 lg:col-span-1 flex items-center justify-center gap-2"
                   >
-                    Adicionar Profissional
+                    <Plus size={16} /> Adicionar
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                <table className="w-full text-left">
-                  <thead className="sticky top-0 bg-zinc-950 z-10">
-                    <tr className="border-b border-white/10">
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Unidade</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => {
-                      const isEditing = editingBarberId === b.id;
-                      return (
-                        <React.Fragment key={b.id}>
-                          <tr className={`group transition-colors ${isEditing ? 'bg-white/5' : 'hover:bg-white/[0.02]'}`}>
-                            <td className="py-4 text-sm font-bold text-white italic uppercase">{b.name}</td>
-                            <td className="py-4 text-xs text-zinc-500 font-bold">
-                              {units.find(u => u.id === b.unit_id)?.name}
-                            </td>
-                            <td className="py-4">
-                              <div className="flex justify-center items-center gap-2">
-                                <button 
-                                  onClick={() => setEditingBarberId(isEditing ? null : b.id)}
-                                  className={`p-2 rounded-xl transition-all ${isEditing ? 'bg-brand text-white' : 'bg-white/5 text-zinc-500 hover:text-white'}`}
-                                >
-                                  <Pencil size={16} />
-                                </button>
+              {/* Lista de Profissionais */}
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10">
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">{barbers.length} Profissionais Cadastrados</h3>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => {
+                    const isEditing = editingBarberId === b.id;
+                    return (
+                      <div key={b.id} className="p-6 transition-colors hover:bg-white/[0.02]">
+                        {/* Linha principal */}
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shrink-0">
+                              {b.name.substring(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-display font-black text-white italic uppercase truncate">{b.name}</p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="text-[9px] text-zinc-500 font-bold">{units.find(u => u.id === b.unit_id)?.name}</span>
+                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
+                                  b.category === 'adm' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                                }`}>{b.category === 'adm' ? 'ADM' : 'Barbeiro'}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button 
+                              onClick={() => setEditingBarberId(isEditing ? null : b.id)}
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${
+                                isEditing ? 'bg-brand text-white border-brand/50' : 'bg-white/5 text-zinc-500 hover:text-white border-white/10'
+                              }`}
+                            >
+                              <Pencil size={12} /> {isEditing ? 'Fechar' : 'Editar'}
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                const newVal = !b.is_hidden_crm;
+                                const { error } = await supabase.from('previa_barbers').update({ is_hidden_crm: newVal }).eq('id', b.id);
+                                if (error) return showNotification('error', error.message);
+                                setBarbers(barbers.map(x => x.id === b.id ? {...x, is_hidden_crm: newVal} : x));
+                              }}
+                              className={`px-3 py-2 rounded-xl text-[9px] font-black uppercase transition-all border ${
+                                b.is_hidden_crm ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-white/5 border-white/10 text-zinc-600'
+                              }`}
+                            >
+                              CRM {b.is_hidden_crm ? 'OFF' : 'ON'}
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                if (!confirm(`Excluir ${b.name}?`)) return;
+                                const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
+                                if (error) return showNotification('error', error.message);
+                                setBarbers(barbers.filter(x => x.id !== b.id));
+                              }}
+                              className="p-2 text-zinc-700 hover:text-red-500 transition-colors rounded-xl hover:bg-red-500/10"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
 
+                        {/* Formulário de edição com animação */}
+                        <AnimatePresence>
+                          {isEditing && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-5 pt-5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Unidade</label>
+                                  <select 
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                    value={b.unit_id}
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, unit_id: e.target.value} : x))}
+                                  >
+                                    {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
+                                  </select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Categoria</label>
+                                  <select 
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                    value={b.category || 'barbeiro'}
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, category: e.target.value as any} : x))}
+                                  >
+                                    <option value="barbeiro" className="bg-zinc-950">Barbeiro</option>
+                                    <option value="adm" className="bg-zinc-950">ADM</option>
+                                  </select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Chave Pix</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.pix_key || ''} placeholder="Chave Pix"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: e.target.value} : x))}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CNPJ</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.cnpj || ''} placeholder="00.000.000/0001-00"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: e.target.value} : x))}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Login Gov.br</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.gov_user || ''} placeholder="CPF"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha Gov.br</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.gov_pass || ''} placeholder="Senha"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
+                                  />
+                                </div>
                                 <button 
                                   onClick={async () => {
-                                    const newVal = !b.is_hidden_crm;
-                                    const { error } = await supabase.from('previa_barbers').update({ is_hidden_crm: newVal }).eq('id', b.id);
+                                    const { error } = await supabase.from('previa_barbers').update({
+                                      unit_id: b.unit_id, pix_key: b.pix_key, cnpj: b.cnpj,
+                                      gov_user: b.gov_user, gov_pass: b.gov_pass,
+                                      category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm
+                                    }).eq('id', b.id);
                                     if (error) return showNotification('error', error.message);
-                                    setBarbers(barbers.map(x => x.id === b.id ? {...x, is_hidden_crm: newVal} : x));
+                                    showNotification('success', `${b.name} atualizado!`);
+                                    setEditingBarberId(null);
                                   }}
-                                  className={`px-3 py-2 rounded-xl text-[8px] font-black uppercase transition-all border ${b.is_hidden_crm ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-white/5 border-white/10 text-zinc-600'}`}
-                                  title="Ocultar no CRM"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 sm:col-span-2 lg:col-span-1"
                                 >
-                                  CRM: {b.is_hidden_crm ? 'OFF' : 'ON'}
-                                </button>
-
-                                <button 
-                                  onClick={async () => {
-                                    if (!confirm(`Excluir ${b.name}?`)) return;
-                                    const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
-                                    if (error) return showNotification('error', error.message);
-                                    setBarbers(barbers.filter(x => x.id !== b.id));
-                                  }}
-                                  className="p-2 text-zinc-800 hover:text-brand transition-colors"
-                                >
-                                  <Trash2 size={16} />
+                                  <Save size={14} /> Salvar Alterações
                                 </button>
                               </div>
-                            </td>
-                          </tr>
-                          
-                          {isEditing && (
-                            <tr className="bg-white/5 border-b border-white/10">
-                              <td colSpan={3} className="p-6 pt-0">
-                                <div className="bg-black/40 border border-white/5 rounded-2xl p-6 grid grid-cols-2 gap-4 shadow-inner">
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Unidade</label>
-                                    <select 
-                                      className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
-                                      value={b.unit_id}
-                                      onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, unit_id: e.target.value} : x))}
-                                    >
-                                      {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
-                                    </select>
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Chave Pix</label>
-                                    <input 
-                                      type="text"
-                                      className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                      value={b.pix_key || ''}
-                                      placeholder="Chave Pix"
-                                      onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: e.target.value} : x))}
-                                    />
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CNPJ</label>
-                                    <input 
-                                      type="text"
-                                      className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                      value={b.cnpj || ''}
-                                      placeholder="00.000.000/0001-00"
-                                      onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: e.target.value} : x))}
-                                    />
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Gov.br (Usuário / Senha)</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                      <input 
-                                        type="text"
-                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                        value={b.gov_user || ''}
-                                        placeholder="CPF"
-                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
-                                      />
-                                      <input 
-                                        type="text"
-                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                        value={b.gov_pass || ''}
-                                        placeholder="Senha"
-                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col gap-2">
-                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Categoria</label>
-                                    <select 
-                                      className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
-                                      value={b.category || 'barbeiro'}
-                                      onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, category: e.target.value as any} : x))}
-                                    >
-                                      <option value="barbeiro" className="bg-zinc-950">Barbeiro</option>
-                                      <option value="adm" className="bg-zinc-950">ADM</option>
-                                    </select>
-                                  </div>
-                                  <div className="col-span-2 mt-2">
-                                    <button 
-                                      onClick={async () => {
-                                        const { error } = await supabase.from('previa_barbers').update({
-                                          unit_id: b.unit_id,
-                                          pix_key: b.pix_key,
-                                          cnpj: b.cnpj,
-                                          gov_user: b.gov_user,
-                                          gov_pass: b.gov_pass,
-                                          category: b.category || 'barbeiro',
-                                          is_hidden_crm: b.is_hidden_crm
-                                        }).eq('id', b.id);
-                                        if (error) return showNotification('error', error.message);
-                                        showNotification('success', `${b.name} atualizado!`);
-                                        setEditingBarberId(null);
-                                      }}
-                                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-                                    >
-                                      <Save size={18} /> Salvar Alterações
-                                    </button>
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
+                            </motion.div>
                           )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           </div>
