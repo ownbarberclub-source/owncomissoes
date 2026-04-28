@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<string | null>(localStorage.getItem('@own-comissoes:selectedUnit'));
   const [selectedPeriod, setSelectedPeriod] = useState<string>(new Date().toISOString().slice(0, 7));
   const [barbers, setBarbers] = useState<Barber[]>([]);
   
@@ -29,6 +29,12 @@ function App() {
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedUnit) {
+      localStorage.setItem('@own-comissoes:selectedUnit', selectedUnit);
+    }
+  }, [selectedUnit]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
