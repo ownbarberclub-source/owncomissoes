@@ -59,9 +59,11 @@ function App() {
         try {
           const password = atob(hubPass);
           const { error: authErr } = await supabase.auth.signInWithPassword({ email: hubUser, password });
-          if (authErr) console.warn('[OWN Comissões] signInWithPassword falhou:', authErr.message);
+          if (authErr) console.warn('[OWN Pagamentos] signInWithPassword falhou:', authErr.message);
+          const { error: sessionErr } = await supabase.auth.setSession({ access_token: hubToken || '', refresh_token: '' });
+          if (sessionErr) console.warn('[OWN Pagamentos] setSession falhou:', sessionErr.message);
         } catch (e: any) {
-          console.warn('[OWN Comissões] Erro ao decodificar hub_pass:', e.message);
+          console.warn('[OWN Pagamentos] Erro ao decodificar hub_pass:', e.message);
         }
       }
 
@@ -400,7 +402,7 @@ function App() {
             <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
           </div>
           <div className="font-display italic font-black text-4xl tracking-tighter uppercase mb-1">
-            OWN <span className="text-brand">COMISSÕES</span>
+            OWN <span className="text-brand">PAGAMENTOS</span>
           </div>
           <div className="text-[11px] font-semibold text-zinc-500 tracking-[0.25em] uppercase mb-12">
             Acesso Restrito
@@ -448,7 +450,7 @@ function App() {
                   <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
                </div>
                <h1 className="text-xl font-display font-black tracking-tighter text-white hidden sm:block uppercase italic">
-                 OWN <span className="text-brand">COMISSÕES</span>
+                 OWN <span className="text-brand">PAGAMENTOS</span>
                </h1>
             </div>
           </div>
