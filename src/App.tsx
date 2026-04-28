@@ -327,17 +327,42 @@ function App() {
     }));
   };
 
-  const toggleUnifiedStatus = (all_ids: string[], field: 'status_q1' | 'status_q2', currentStatus: 'pending' | 'paid') => {
-    const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
+  const handleToggleAutoSave = async (allIds: string[], field: keyof CommissionRecord, currentValue: any) => {
+    if (!selectedPeriod) return;
+    const newValue = field.startsWith('status_') ? (currentValue === 'paid' ? 'pending' : 'paid') : !currentValue;
+    
+    // Update local state optimistically
     setCommissions(prev => {
       const next = { ...prev };
-      all_ids.forEach(id => {
-        if (next[id]) {
-          next[id] = { ...next[id], [field]: newStatus };
-        }
+      allIds.forEach(id => {
+        next[id] = { ...(next[id] || {}), [field]: newValue } as CommissionRecord;
       });
       return next;
     });
+
+    // Persist immediately
+    try {
+      const commToSave = allIds.map(id => {
+        const c = commissions[id] || {};
+        return {
+          unit_id: c.unit_id || barbers.find(b => b.id === id)?.unit_id,
+          period: selectedPeriod,
+          barber_id: id,
+          quinzena_1: c.quinzena_1 || 0,
+          quinzena_2_avulso: c.quinzena_2_avulso || 0,
+          mes_assinatura: c.mes_assinatura || 0,
+          status_q1: field === 'status_q1' ? newValue : (c.status_q1 || 'pending'),
+          status_q2: field === 'status_q2' ? newValue : (c.status_q2 || 'pending'),
+          nf_q1_issued: field === 'nf_q1_issued' ? newValue : (c.nf_q1_issued || false),
+          nf_q2_issued: field === 'nf_q2_issued' ? newValue : (c.nf_q2_issued || false),
+          tax_paid: field === 'tax_paid' ? newValue : (c.tax_paid || false),
+          updated_at: new Date().toISOString()
+        };
+      });
+      await supabase.from('previa_manual_payments').upsert(commToSave, { onConflict: 'barber_id,period' });
+    } catch (e: any) {
+      showNotification('error', `Erro ao salvar: ${e.message}`);
+    }
   };
 
 
@@ -705,7 +730,7 @@ function App() {
                                             </p>
                                           </div>
                                           <button
-                                            onClick={() => handleCommissionChange(barber.id, 'tax_paid', !commissions[barber.id]?.tax_paid)}
+                                            onClick={() => handleToggleAutoSave(barber.all_ids, 'tax_paid', commissions[barber.id]?.tax_paid)}
                                             className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400 hover:border-white/20'}`}
                                           >
                                             <DollarSign size={11} className={commissions[barber.id]?.tax_paid ? 'animate-pulse' : ''} />
@@ -750,7 +775,7 @@ function App() {
                                             <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ1.toFixed(2)}</span></span>
                                           </div>
                                           <button 
-                                            onClick={() => handleCommissionChange(barber.id, 'nf_q1_issued', !commissions[barber.id]?.nf_q1_issued)}
+                                            onClick={() => handleToggleAutoSave(barber.all_ids, 'nf_q1_issued', commissions[barber.id]?.nf_q1_issued)}
                                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
                                           >
                                             {commissions[barber.id]?.nf_q1_issued ? '✅ OK' : 'Emitir NF'}
@@ -759,7 +784,7 @@ function App() {
                                       </div>
                                       
                                       <button 
-                                        onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
+                                        onClick={() => handleToggleAutoSave(barber.all_ids, 'status_q1', statusQ1)}
                                         className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ1 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
                                       >
                                         {statusQ1 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
@@ -822,7 +847,7 @@ function App() {
                                               <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ2.toFixed(2)}</span></span>
                                             </div>
                                             <button 
-                                              onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
+                                              onClick={() => handleToggleAutoSave(barber.all_ids, 'nf_q2_issued', commissions[barber.id]?.nf_q2_issued)}
                                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
                                             >
                                               {commissions[barber.id]?.nf_q2_issued ? '✅ OK' : 'Emitir NF'}
@@ -831,7 +856,7 @@ function App() {
                                         </div>
                                         
                                         <button 
-                                          onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
+                                          onClick={() => handleToggleAutoSave(barber.all_ids, 'status_q2', statusQ2)}
                                           className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ2 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
                                         >
                                           {statusQ2 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
