@@ -761,7 +761,24 @@ function App() {
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex flex-col gap-4 mb-4">
                                         <div className="flex flex-col gap-1">
-                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">
+                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none mb-2">
+                                            {totals.isAdm ? 'Composição do Valor' : 'Composição Q1'}
+                                          </span>
+                                          
+                                          <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/10 mb-2 shadow-inner">
+                                            <div className="flex justify-between items-center text-[10px] font-bold text-zinc-400">
+                                              <span className="uppercase tracking-widest">Bruto Calculado</span>
+                                              <span className="font-mono text-zinc-300 text-xs">R$ {totals.nfQ1.toFixed(2)}</span>
+                                            </div>
+                                            {totals.vQ1 > 0 && (
+                                              <div className="flex justify-between items-center text-[10px] font-bold text-rose-400">
+                                                <span className="uppercase tracking-widest">Vales Descontados</span>
+                                                <span className="font-mono text-xs">- R$ {totals.vQ1.toFixed(2)}</span>
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none mt-1">
                                             {totals.isAdm ? 'Líquido Mensal' : 'Líquido A Pagar'}
                                           </span>
                                           <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
@@ -835,7 +852,24 @@ function App() {
                                       <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                         <div className="flex flex-col gap-4 mb-4">
                                           <div className="flex flex-col gap-1">
-                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none mb-2">
+                                              Composição Q2
+                                            </span>
+                                            
+                                            <div className="flex flex-col gap-1.5 bg-white/5 p-3 rounded-xl border border-white/10 mb-2 shadow-inner">
+                                              <div className="flex justify-between items-center text-[10px] font-bold text-zinc-400">
+                                                <span className="uppercase tracking-widest">Bruto Calculado</span>
+                                                <span className="font-mono text-zinc-300 text-xs">R$ {totals.nfQ2.toFixed(2)}</span>
+                                              </div>
+                                              {totals.vQ2 > 0 && (
+                                                <div className="flex justify-between items-center text-[10px] font-bold text-rose-400">
+                                                  <span className="uppercase tracking-widest">Vales Descontados</span>
+                                                  <span className="font-mono text-xs">- R$ {totals.vQ2.toFixed(2)}</span>
+                                                </div>
+                                              )}
+                                            </div>
+
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none mt-1">Líquido A Pagar</span>
                                             <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
                                               R$ {totals.q2.toFixed(2)}
                                             </div>
