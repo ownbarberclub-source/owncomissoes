@@ -989,7 +989,7 @@ function App() {
                     value={newProfessional.pix_key}
                     onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
                   />
-                  <div className="grid grid-cols-2 gap-2 sm:col-span-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:col-span-3">
                     <input 
                       type="text" 
                       placeholder="Login Gov.br" 
@@ -1007,12 +1007,12 @@ function App() {
                     <input 
                       type="text" 
                       placeholder="CNPJ" 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-2 sm:col-span-1"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-1"
                       value={newProfessional.cnpj}
                       onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
                     />
                     <select 
-                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-2 sm:col-span-1"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-1"
                       value={newProfessional.category}
                       onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
                     >
@@ -1128,17 +1128,17 @@ function App() {
                                   </div>
                                   <div className="flex flex-col gap-2">
                                     <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Gov.br (Usuário / Senha)</label>
-                                    <div className="flex gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                       <input 
                                         type="text"
-                                        className="flex-1 bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
                                         value={b.gov_user || ''}
                                         placeholder="CPF"
                                         onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
                                       />
                                       <input 
                                         type="text"
-                                        className="flex-1 bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
                                         value={b.gov_pass || ''}
                                         placeholder="Senha"
                                         onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
