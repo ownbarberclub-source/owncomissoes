@@ -4,7 +4,7 @@ import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSess
 import { 
   Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
-  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock
+  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -617,26 +617,34 @@ function App() {
                                       </div>
                                     </div>
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
-                                      <div className="flex justify-between items-center mb-3">
-                                        <div className="flex flex-col">
-                                          <span className="text-xs font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
-                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {totals.nfQ1.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                          <span className={`text-lg font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
-                                          <button 
-                                            onClick={() => handleCommissionChange(barber.id, 'nf_q1_issued', !commissions[barber.id]?.nf_q1_issued)}
-                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600'}`}
-                                          >
-                                            {commissions[barber.id]?.nf_q1_issued ? '✅ NF EMITIDA' : 'Emitir NF'}
-                                          </button>
+                                      <div className="flex flex-col gap-4 mb-4">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                            <div className={`text-2xl font-display font-black italic tracking-tighter leading-none mt-1 ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
+                                              R$ {totals.q1.toFixed(2)}
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-col items-end gap-2">
+                                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/5">
+                                              <FileText size={10} className="text-zinc-600" />
+                                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">NF: <span className="text-zinc-300">R$ {totals.nfQ1.toFixed(2)}</span></span>
+                                            </div>
+                                            <button 
+                                              onClick={() => handleCommissionChange(barber.id, 'nf_q1_issued', !commissions[barber.id]?.nf_q1_issued)}
+                                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
+                                            >
+                                              {commissions[barber.id]?.nf_q1_issued ? '✅ NF OK' : 'Emitir NF'}
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
+                                      
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
-                                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${statusQ1 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
+                                        className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ1 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
                                       >
-                                        {statusQ1 === 'paid' ? '✅ Já Pago' : 'Pendente'}
+                                        {statusQ1 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
                                       </button>
                                     </div>
                                   </div>
@@ -674,26 +682,34 @@ function App() {
                                       </div>
                                     </div>
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
-                                      <div className="flex justify-between items-center mb-3">
-                                        <div className="flex flex-col">
-                                          <span className="text-[11px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
-                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {totals.nfQ2.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                          <span className={`text-lg font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
-                                          <button 
-                                            onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
-                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600'}`}
-                                          >
-                                            {commissions[barber.id]?.nf_q2_issued ? '✅ NF EMITIDA' : 'Emitir NF'}
-                                          </button>
+                                      <div className="flex flex-col gap-4 mb-4">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                            <div className={`text-2xl font-display font-black italic tracking-tighter leading-none mt-1 ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
+                                              R$ {totals.q2.toFixed(2)}
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-col items-end gap-2">
+                                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/5">
+                                              <FileText size={10} className="text-zinc-600" />
+                                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">NF: <span className="text-zinc-300">R$ {totals.nfQ2.toFixed(2)}</span></span>
+                                            </div>
+                                            <button 
+                                              onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
+                                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
+                                            >
+                                              {commissions[barber.id]?.nf_q2_issued ? '✅ NF OK' : 'Emitir NF'}
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
+                                      
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
-                                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${statusQ2 === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'bg-white/5 border-white/10 text-zinc-500 hover:bg-white/10 hover:text-white'}`}
+                                        className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ2 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
                                       >
-                                        {statusQ2 === 'paid' ? '✅ Já Pago' : 'Pendente'}
+                                        {statusQ2 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
                                       </button>
                                     </div>
                                   </div>
