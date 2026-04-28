@@ -25,7 +25,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -546,6 +546,13 @@ function App() {
                                               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                               PIX: <span className="text-white text-xs">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
                                             </div>
+                                            {barbers.find(b => b.id === barber.id)?.gov_user && (
+                                              <div className="bg-white/5 text-zinc-400 text-[10px] font-black px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-widest flex items-center gap-2">
+                                                GOV: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
+                                                <span className="opacity-30">|</span>
+                                                <span className="text-zinc-500 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                              </div>
+                                            )}
                                           </div>
                                         )}
                                         <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest opacity-60">
@@ -860,18 +867,34 @@ function App() {
                     value={newProfessional.pix_key}
                     onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
                   />
+                  <div className="grid grid-cols-2 gap-2 sm:col-span-3">
+                    <input 
+                      type="text" 
+                      placeholder="Login Gov.br" 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                      value={newProfessional.gov_user}
+                      onChange={(e) => setNewProfessional({...newProfessional, gov_user: e.target.value})}
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Senha Gov.br" 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                      value={newProfessional.gov_pass}
+                      onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
+                    />
+                  </div>
                   <button 
                     onClick={async () => {
                       if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
                       const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                       if (error) return showNotification('error', error.message);
                       setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '' });
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
-                    className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all"
+                    className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all sm:col-span-3"
                   >
-                    Adicionar
+                    Adicionar Profissional
                   </button>
                 </div>
               </div>
@@ -883,6 +906,7 @@ function App() {
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Unidade</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chave Pix</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Credenciais Gov.br</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ocultar no CRM</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ações</th>
                     </tr>
@@ -905,6 +929,34 @@ function App() {
                               setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: newVal} : x));
                             }}
                           />
+                        </td>
+                        <td className="py-4">
+                          <div className="flex flex-col gap-1.5">
+                            <input 
+                              type="text"
+                              className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                              value={b.gov_user || ''}
+                              placeholder="CPF / Usuário"
+                              onChange={async (e) => {
+                                const newVal = e.target.value;
+                                const { error } = await supabase.from('previa_barbers').update({ gov_user: newVal }).eq('id', b.id);
+                                if (error) return showNotification('error', error.message);
+                                setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: newVal} : x));
+                              }}
+                            />
+                            <input 
+                              type="text"
+                              className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-zinc-400 outline-none focus:border-brand/50 transition-all w-full font-mono"
+                              value={b.gov_pass || ''}
+                              placeholder="Senha"
+                              onChange={async (e) => {
+                                const newVal = e.target.value;
+                                const { error } = await supabase.from('previa_barbers').update({ gov_pass: newVal }).eq('id', b.id);
+                                if (error) return showNotification('error', error.message);
+                                setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: newVal} : x));
+                              }}
+                            />
+                          </div>
                         </td>
                         <td className="py-4 text-center">
                           <button 

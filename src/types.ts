@@ -11,6 +11,8 @@ export interface Barber {
   photo_url?: string;
   is_hidden_crm?: boolean;
   pix_key?: string;
+  gov_user?: string;
+  gov_pass?: string;
 }
 
 export interface BarberGuarantee {
