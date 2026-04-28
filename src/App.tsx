@@ -659,21 +659,22 @@ function App() {
                                             </div>
                                           )}
                                         </div>
-                                        <div className="flex items-center gap-4 mt-4">
-                                          <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
-                                            {barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'Administrativo' : 'Barbeiro'}
-                                          </div>
-                                          <p className="text-[11px] text-zinc-600 font-black uppercase tracking-[0.2em] opacity-40">
-                                            ID: {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
-                                          </p>
+                                        <div className="flex flex-col gap-2 mt-3">
                                           <div className="flex items-center gap-2">
-                                            <button 
-                                              onClick={() => handleCommissionChange(barber.id, 'tax_paid', !commissions[barber.id]?.tax_paid)}
-                                              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all shadow-sm ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400'}`}
-                                            >
-                                              <DollarSign size={12} className={commissions[barber.id]?.tax_paid ? 'animate-pulse' : ''} /> {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
-                                            </button>
+                                            <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
+                                              {barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'ADM' : 'Barbeiro'}
+                                            </div>
+                                            <p className="text-[9px] text-zinc-700 font-black uppercase tracking-widest truncate">
+                                              {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas` : barber.id.slice(0, 8)}
+                                            </p>
                                           </div>
+                                          <button
+                                            onClick={() => handleCommissionChange(barber.id, 'tax_paid', !commissions[barber.id]?.tax_paid)}
+                                            className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border transition-all ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400 hover:border-white/20'}`}
+                                          >
+                                            <DollarSign size={11} className={commissions[barber.id]?.tax_paid ? 'animate-pulse' : ''} />
+                                            {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
+                                          </button>
                                         </div>
                                       </div>
                                   </div>
