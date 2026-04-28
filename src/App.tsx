@@ -247,7 +247,9 @@ function App() {
       q1: baseQ1 - vQ1,
       q2: (baseQ2 + sums.sumAssin) - vQ2,
       vQ1,
-      vQ2
+      vQ2,
+      nfQ1: baseQ1,
+      nfQ2: baseQ2 + sums.sumAssin
     };
   };
 
@@ -618,7 +620,7 @@ function App() {
                                       <div className="flex justify-between items-center mb-3">
                                         <div className="flex flex-col">
                                           <span className="text-xs font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
-                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {(isUnifiedView ? sums.sumQ1 : (commissions[barber.id]?.quinzena_1 || 0)).toFixed(2)}</span>
+                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {totals.nfQ1.toFixed(2)}</span>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
                                           <span className={`text-lg font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
@@ -675,7 +677,7 @@ function App() {
                                       <div className="flex justify-between items-center mb-3">
                                         <div className="flex flex-col">
                                           <span className="text-[11px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
-                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {(isUnifiedView ? (sums.sumQ2 + sums.sumAssin) : ((commissions[barber.id]?.quinzena_2_avulso || 0) + (commissions[barber.id]?.mes_assinatura || 0))).toFixed(2)}</span>
+                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {totals.nfQ2.toFixed(2)}</span>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
                                           <span className={`text-lg font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
