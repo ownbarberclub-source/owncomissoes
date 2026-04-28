@@ -651,11 +651,17 @@ function App() {
                                             </div>
                                           )}
                                           {barbers.find(b => b.id === barber.id)?.gov_user && (
-                                            <div className="bg-white/5 text-zinc-400 text-[10px] font-black px-2.5 py-1 rounded-xl border border-white/10 uppercase tracking-wider flex items-center gap-1.5 w-full">
-                                              <Lock size={11} className="opacity-50 shrink-0" />
-                                              <span className="text-zinc-300 font-mono text-[10px] truncate">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
-                                              <span className="opacity-20 mx-0.5">|</span>
-                                              <span className="text-zinc-500 font-mono text-[10px] truncate">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                            <div className="bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 w-full flex flex-col gap-1">
+                                              <div className="flex items-center gap-1.5">
+                                                <Lock size={10} className="text-zinc-600 shrink-0" />
+                                                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Login</span>
+                                                <span className="text-zinc-200 font-mono text-[10px] ml-auto">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
+                                              </div>
+                                              <div className="flex items-center gap-1.5 border-t border-white/5 pt-1">
+                                                <Lock size={10} className="text-zinc-600 shrink-0 opacity-0" />
+                                                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Senha</span>
+                                                <span className="text-zinc-200 font-mono text-[10px] ml-auto">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                              </div>
                                             </div>
                                           )}
                                         </div>
