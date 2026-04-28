@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
@@ -29,6 +29,15 @@ function App() {
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
+
+  const maskCNPJ = (value: string) => {
+    const d = value.replace(/\D/g, '').slice(0, 14);
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `${d.slice(0,2)}.${d.slice(2)}`;
+    if (d.length <= 8) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5)}`;
+    if (d.length <= 12) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8)}`;
+    return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+  };
 
   useEffect(() => {
     if (selectedUnit) {
@@ -1033,10 +1042,11 @@ function App() {
                     onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
                   />
                   <input 
-                    type="text" placeholder="CNPJ"
+                    type="text" placeholder="00.000.000/0001-00"
                     className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
                     value={newProfessional.cnpj}
-                    onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
+                    onChange={(e) => setNewProfessional({...newProfessional, cnpj: maskCNPJ(e.target.value)})}
+                    maxLength={18}
                   />
                   <input 
                     type="text" placeholder="Login Gov.br"
@@ -1172,7 +1182,8 @@ function App() {
                                   <input type="text"
                                     className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
                                     value={b.cnpj || ''} placeholder="00.000.000/0001-00"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: e.target.value} : x))}
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: maskCNPJ(e.target.value)} : x))}
+                                    maxLength={18}
                                   />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
