@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
 import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSession } from './types';
 import { 
@@ -395,35 +395,58 @@ function App() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(225,6,0,0.08) 0%, #000 60%)' }}>
-        <div className="absolute inset-0 bg-grid z-0" />
-        <div className="max-w-md w-full relative z-10 text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[22px] bg-white/5 border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.5)] mb-5 overflow-hidden p-3">
-            <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
-          </div>
-          <div className="font-display italic font-black text-4xl tracking-tighter uppercase mb-1">
-            OWN <span className="text-brand">PAGAMENTOS</span>
-          </div>
-          <div className="text-[11px] font-semibold text-zinc-500 tracking-[0.25em] uppercase mb-12">
-            Acesso Restrito
-          </div>
-          
-          <div className="bg-white/5 border border-white/10 rounded-[24px] p-9 backdrop-blur-md shadow-2xl">
-            <h1 className="font-display text-2xl font-black mb-2 italic uppercase">Autenticação Necessária</h1>
-            <p className="text-zinc-400 text-sm mb-8 leading-relaxed">Este sistema é exclusivo para operadores autorizados. Por favor, autentique-se via hub.</p>
-            
-            <a 
-              href="https://ownpainel.vercel.app" 
-              className="flex items-center justify-center gap-2 bg-brand text-white w-full py-4 rounded-xl text-[13px] font-bold uppercase tracking-widest hover:bg-brand-light hover:-translate-y-px transition-all shadow-[0_8px_24px_rgba(225,6,0,0.25)] hover:shadow-[0_12px_32px_rgba(225,6,0,0.4)] active:scale-[0.98]"
-            >
-              Ir para o Hub
-            </a>
-          </div>
-          
-          <div className="mt-8 text-zinc-600 text-[11px] font-semibold tracking-widest uppercase">
-            OWN BARBER CLUB © {new Date().getFullYear()}
-          </div>
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
+        {/* Background Orbs */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <div className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] -top-32 -left-32 animate-pulse" style={{ background: 'radial-gradient(circle, #E10600 0%, transparent 70%)' }} />
+          <div className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[100px] -bottom-20 -right-20" style={{ background: 'radial-gradient(circle, #E10600 0%, transparent 70%)' }} />
+          <div className="absolute inset-0 bg-grid opacity-[0.06]" />
+          <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand/20 to-transparent" />
         </div>
+        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="relative z-10 w-full max-w-sm mx-auto px-6">
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, delay: 0.1 }} className="flex flex-col items-center mb-10">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-brand/20 rounded-[28px] blur-xl scale-110" />
+              <div className="relative w-20 h-20 rounded-[24px] bg-white/5 border border-white/10 shadow-2xl overflow-hidden p-3.5 flex items-center justify-center backdrop-blur-sm">
+                <img src="/logo.png" alt="OWN" className="w-full h-full object-contain brightness-0 invert" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h1 className="font-display italic font-black text-[42px] leading-none tracking-tighter uppercase text-white mb-2">
+                OWN <span className="text-brand">PAGAMENTOS</span>
+              </h1>
+              <div className="flex items-center justify-center gap-3">
+                <div className="h-px w-10 bg-gradient-to-r from-transparent to-white/20" />
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">Sistema de Fechamento</p>
+                <div className="h-px w-10 bg-gradient-to-l from-transparent to-white/20" />
+              </div>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.25 }} className="relative">
+            <div className="absolute -inset-px rounded-[28px] bg-gradient-to-b from-white/10 via-white/5 to-transparent pointer-events-none z-10" />
+            <div className="relative bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] rounded-[28px] p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
+              <div className="flex items-center gap-2 mb-7 p-3 bg-brand/5 border border-brand/10 rounded-2xl">
+                <div className="w-2 h-2 bg-brand rounded-full animate-pulse shrink-0" />
+                <p className="text-[11px] font-bold text-brand/80 uppercase tracking-wider">Acesso Restrito — Operadores Autorizados</p>
+              </div>
+              <h2 className="font-display font-black text-xl text-white italic uppercase tracking-tight mb-2">Autenticacao Necessaria</h2>
+              <p className="text-zinc-500 text-[13px] leading-relaxed mb-8">
+                Acesse via <span className="text-white font-semibold">OWN Hub</span> para entrar automaticamente no sistema de pagamentos.
+              </p>
+              <a href="https://ownpainel.vercel.app" className="group relative flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-display font-black italic uppercase text-[13px] tracking-widest overflow-hidden transition-all duration-300 shadow-[0_8px_32px_rgba(225,6,0,0.3)] hover:shadow-[0_12px_40px_rgba(225,6,0,0.5)] hover:-translate-y-px active:scale-[0.98]" style={{ background: 'linear-gradient(135deg, #E10600 0%, #FF2B26 100%)' }}>
+                <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.08] transition-all duration-300" />
+                <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]" />
+                <span className="relative text-white">Ir para o Hub</span>
+                <svg className="relative w-4 h-4 text-white/80 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </a>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }} className="mt-10 text-center">
+            <p className="text-zinc-700 text-[10px] font-semibold uppercase tracking-[0.25em]">OWN Barber Club © {new Date().getFullYear()}</p>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }
