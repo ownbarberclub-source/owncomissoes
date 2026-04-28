@@ -756,6 +756,20 @@ function App() {
                                             <DollarSign size={11} className={commissions[barber.id]?.tax_paid ? 'animate-pulse' : ''} />
                                             {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
                                           </button>
+                                          
+                                          <div className="flex flex-col gap-1.5 bg-black/40 p-2.5 rounded-xl border border-white/5 mt-1">
+                                            <div className="flex justify-between items-center px-1">
+                                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Total p/ NF</span>
+                                              <span className="text-[10px] font-mono text-zinc-300">R$ {(totals.nfQ1 + totals.nfQ2).toFixed(2)}</span>
+                                            </div>
+                                            <button 
+                                              onClick={() => handleToggleAutoSave(barber.all_ids, 'nf_q1_issued', commissions[barber.id]?.nf_q1_issued)}
+                                              className={`w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white hover:border-white/20'}`}
+                                            >
+                                              <FileText size={10} className={commissions[barber.id]?.nf_q1_issued ? '' : 'opacity-50'} />
+                                              {commissions[barber.id]?.nf_q1_issued ? 'NF Emitida' : 'Marcar NF Emitida'}
+                                            </button>
+                                          </div>
                                         </div>
                                       </div>
                                   </div>
@@ -804,19 +818,6 @@ function App() {
                                           <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
                                             R$ {totals.q1.toFixed(2)}
                                           </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
-                                            <FileText size={10} className="text-zinc-600" />
-                                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ1.toFixed(2)}</span></span>
-                                          </div>
-                                          <button 
-                                            onClick={() => handleToggleAutoSave(barber.all_ids, 'nf_q1_issued', commissions[barber.id]?.nf_q1_issued)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
-                                          >
-                                            {commissions[barber.id]?.nf_q1_issued ? '✅ OK' : 'Emitir NF'}
-                                          </button>
                                         </div>
                                       </div>
                                       
@@ -893,19 +894,6 @@ function App() {
                                             <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
                                               R$ {totals.q2.toFixed(2)}
                                             </div>
-                                          </div>
-                                          
-                                          <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
-                                              <FileText size={10} className="text-zinc-600" />
-                                              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ2.toFixed(2)}</span></span>
-                                            </div>
-                                            <button 
-                                              onClick={() => handleToggleAutoSave(barber.all_ids, 'nf_q2_issued', commissions[barber.id]?.nf_q2_issued)}
-                                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
-                                            >
-                                              {commissions[barber.id]?.nf_q2_issued ? '✅ OK' : 'Emitir NF'}
-                                            </button>
                                           </div>
                                         </div>
                                         
