@@ -15,11 +15,12 @@ ALTER TABLE previa_barbers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso publico previa_barbers" ON previa_barbers;
 CREATE POLICY "Acesso publico previa_barbers" ON previa_barbers FOR ALL USING (true);
 
--- Adicionar campos de Chave Pix, Credenciais Gov.br e CNPJ se não existirem
+-- Adicionar campos de Chave Pix, Credenciais Gov.br, CNPJ e Categoria se não existirem
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS pix_key TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_user TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_pass TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS cnpj TEXT;
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'barbeiro';
 
 -- Adicionar campos de controle de NF e Imposto na tabela de pagamentos
 ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS nf_q1_issued BOOLEAN DEFAULT false;

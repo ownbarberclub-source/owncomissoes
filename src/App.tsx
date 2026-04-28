@@ -608,10 +608,10 @@ function App() {
                     <table className="w-full text-left border-collapse whitespace-nowrap min-w-[900px]">
                       <thead>
                         <tr className="bg-white/5 border-b border-white/10">
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-72">Pagamento 1</th>
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-[400px]">Pagamento 2</th>
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-40 text-center">Ações</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-72">Barbeiro</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-64">Pagamento 1</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-[380px]">Pagamento 2</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-44 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -628,34 +628,34 @@ function App() {
                           return (
                             <React.Fragment key={barber.id}>
                               <tr className="hover:bg-white/[0.02] transition-colors group">
-                                <td className="p-6 align-top">
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shadow-inner group-hover:border-brand/30 transition-all">
+                                <td className="p-6 align-top w-72 max-w-[288px]">
+                                  <div className="flex items-start gap-3 min-w-0">
+                                    <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 font-display font-black text-base uppercase shadow-inner group-hover:border-brand/30 transition-all shrink-0">
                                       {barber.name.substring(0, 2)}
                                     </div>
-                                      <div className="flex flex-col gap-1">
-                                        <p className="text-lg font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight">
-                                          {barber.name}
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-3 mt-3">
+                                    <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                      <p className="text-base font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight truncate">
+                                        {barber.name}
+                                      </p>
+                                      <div className="flex flex-col items-start gap-1.5 mt-2">
                                           {barbers.find(b => b.id === barber.id)?.pix_key && (
-                                            <div className="bg-emerald-500/10 text-emerald-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-emerald-500/20 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/5 hover:bg-emerald-500/20 transition-all cursor-default">
-                                              <Smartphone size={14} className="opacity-50" />
-                                              PIX: <span className="text-zinc-100 font-mono text-xs">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
+                                            <div className="bg-emerald-500/10 text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-xl border border-emerald-500/20 uppercase tracking-wider flex items-center gap-1.5 w-full truncate">
+                                              <Smartphone size={11} className="opacity-50 shrink-0" />
+                                              <span className="truncate font-mono text-[10px] text-zinc-200">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
                                             </div>
                                           )}
                                           {barbers.find(b => b.id === barber.id)?.cnpj && (
-                                            <div className="bg-blue-500/10 text-blue-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-blue-500/20 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-blue-500/5 hover:bg-blue-500/20 transition-all cursor-default">
-                                              <Building2 size={14} className="opacity-50" />
-                                              CNPJ: <span className="text-zinc-100 font-mono text-xs">{barbers.find(b => b.id === barber.id)?.cnpj}</span>
+                                            <div className="bg-blue-500/10 text-blue-400 text-[10px] font-black px-2.5 py-1 rounded-xl border border-blue-500/20 uppercase tracking-wider flex items-center gap-1.5 w-full truncate">
+                                              <Building2 size={11} className="opacity-50 shrink-0" />
+                                              <span className="truncate font-mono text-[10px] text-zinc-200">{barbers.find(b => b.id === barber.id)?.cnpj}</span>
                                             </div>
                                           )}
                                           {barbers.find(b => b.id === barber.id)?.gov_user && (
-                                            <div className="bg-white/5 text-zinc-400 text-[11px] font-black px-4 py-2 rounded-2xl border border-white/10 uppercase tracking-wider flex items-center gap-2 shadow-lg hover:bg-white/10 transition-all cursor-default">
-                                              <Lock size={14} className="opacity-50" />
-                                              GOV: <span className="text-zinc-100">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
-                                              <span className="opacity-20 mx-1">|</span>
-                                              <span className="text-zinc-400 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                            <div className="bg-white/5 text-zinc-400 text-[10px] font-black px-2.5 py-1 rounded-xl border border-white/10 uppercase tracking-wider flex items-center gap-1.5 w-full">
+                                              <Lock size={11} className="opacity-50 shrink-0" />
+                                              <span className="text-zinc-300 font-mono text-[10px] truncate">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
+                                              <span className="opacity-20 mx-0.5">|</span>
+                                              <span className="text-zinc-500 font-mono text-[10px] truncate">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
                                             </div>
                                           )}
                                         </div>
