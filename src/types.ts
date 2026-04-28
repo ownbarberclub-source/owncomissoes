@@ -13,6 +13,7 @@ export interface Barber {
   pix_key?: string;
   gov_user?: string;
   gov_pass?: string;
+  cnpj?: string;
 }
 
 export interface BarberGuarantee {
@@ -29,6 +30,9 @@ export interface CommissionRecord {
   mes_assinatura: number;
   status_q1?: 'pending' | 'paid';
   status_q2?: 'pending' | 'paid';
+  nf_q1_issued?: boolean;
+  nf_q2_issued?: boolean;
+  tax_paid?: boolean;
 }
 
 export interface Voucher {

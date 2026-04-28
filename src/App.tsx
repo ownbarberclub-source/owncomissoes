@@ -25,7 +25,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +100,18 @@ function App() {
 
     const newComm: Record<string, CommissionRecord> = {};
     barberList.forEach(b => {
-      newComm[b.id] = { barber_id: b.id, unit_id: b.unit_id, quinzena_1: 0, quinzena_2_avulso: 0, mes_assinatura: 0, status_q1: 'pending', status_q2: 'pending' };
+      newComm[b.id] = { 
+        barber_id: b.id, 
+        unit_id: b.unit_id, 
+        quinzena_1: 0, 
+        quinzena_2_avulso: 0, 
+        mes_assinatura: 0, 
+        status_q1: 'pending', 
+        status_q2: 'pending',
+        nf_q1_issued: false,
+        nf_q2_issued: false,
+        tax_paid: false
+      };
     });
 
     if (commData) {
@@ -111,6 +122,9 @@ function App() {
           newComm[c.barber_id].mes_assinatura = c.mes_assinatura;
           newComm[c.barber_id].status_q1 = c.status_q1 || 'pending';
           newComm[c.barber_id].status_q2 = c.status_q2 || 'pending';
+          newComm[c.barber_id].nf_q1_issued = !!c.nf_q1_issued;
+          newComm[c.barber_id].nf_q2_issued = !!c.nf_q2_issued;
+          newComm[c.barber_id].tax_paid = !!c.tax_paid;
         }
       });
     }
@@ -297,6 +311,9 @@ function App() {
           mes_assinatura: c?.mes_assinatura || 0,
           status_q1: c?.status_q1 || 'pending',
           status_q2: c?.status_q2 || 'pending',
+          nf_q1_issued: c?.nf_q1_issued || false,
+          nf_q2_issued: c?.nf_q2_issued || false,
+          tax_paid: c?.tax_paid || false,
           updated_at: new Date().toISOString()
         };
       });
@@ -539,25 +556,40 @@ function App() {
                                       {barber.name.substring(0, 2)}
                                     </div>
                                       <div className="flex flex-col gap-1">
-                                        <p className="text-lg font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight">{barber.name}</p>
-                                        {barbers.find(b => b.id === barber.id)?.pix_key && (
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <div className="bg-emerald-500/20 text-emerald-400 text-[11px] font-black px-3 py-1.5 rounded-xl border border-emerald-500/30 uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-500/10">
-                                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                              PIX: <span className="text-white text-xs">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
-                                            </div>
-                                            {barbers.find(b => b.id === barber.id)?.gov_user && (
-                                              <div className="bg-white/5 text-zinc-400 text-[10px] font-black px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-widest flex items-center gap-2">
-                                                GOV: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
-                                                <span className="opacity-30">|</span>
-                                                <span className="text-zinc-500 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest opacity-60">
-                                          {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
+                                          {barber.name}
                                         </p>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                                          {barbers.find(b => b.id === barber.id)?.pix_key && (
+                                            <div className="bg-emerald-500/10 text-emerald-500 text-[9px] font-black px-2 py-1 rounded-lg border border-emerald-500/20 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+                                              PIX: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.pix_key}</span>
+                                            </div>
+                                          )}
+                                          {barbers.find(b => b.id === barber.id)?.cnpj && (
+                                            <div className="bg-blue-500/10 text-blue-400 text-[9px] font-black px-2 py-1 rounded-lg border border-blue-500/20 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+                                              CNPJ: <span className="text-zinc-200">{barbers.find(b => b.id === barber.id)?.cnpj}</span>
+                                            </div>
+                                          )}
+                                          {barbers.find(b => b.id === barber.id)?.gov_user && (
+                                            <div className="bg-white/5 text-zinc-500 text-[9px] font-black px-2 py-1 rounded-lg border border-white/10 uppercase tracking-widest flex items-center gap-1.5 shadow-sm">
+                                              GOV: <span className="text-zinc-300">{barbers.find(b => b.id === barber.id)?.gov_user}</span>
+                                              <span className="opacity-30">|</span>
+                                              <span className="text-zinc-500 font-mono">{barbers.find(b => b.id === barber.id)?.gov_pass}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-3 mt-2">
+                                          <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest opacity-60">
+                                            {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
+                                          </p>
+                                          <div className="flex items-center gap-2">
+                                            <button 
+                                              onClick={() => handleCommissionChange(barber.id, 'tax_paid', !commissions[barber.id]?.tax_paid)}
+                                              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-tighter border transition-all ${commissions[barber.id]?.tax_paid ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-zinc-400'}`}
+                                            >
+                                              <DollarSign size={10} /> {commissions[barber.id]?.tax_paid ? 'Imposto Pago' : 'Imposto Pendente'}
+                                            </button>
+                                          </div>
+                                        </div>
                                       </div>
                                   </div>
                                 </td>
@@ -579,8 +611,19 @@ function App() {
                                     </div>
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex justify-between items-center mb-3">
-                                        <span className="text-xs font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
-                                        <span className={`text-lg font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {(isUnifiedView ? sums.sumQ1 : (commissions[barber.id]?.quinzena_1 || 0)).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                          <span className={`text-lg font-display font-black italic ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q1.toFixed(2)}</span>
+                                          <button 
+                                            onClick={() => handleCommissionChange(barber.id, 'nf_q1_issued', !commissions[barber.id]?.nf_q1_issued)}
+                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q1_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600'}`}
+                                          >
+                                            {commissions[barber.id]?.nf_q1_issued ? '✅ NF EMITIDA' : 'Emitir NF'}
+                                          </button>
+                                        </div>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q1', statusQ1)}
@@ -625,8 +668,19 @@ function App() {
                                     </div>
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex justify-between items-center mb-3">
-                                        <span className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Líquido A Pagar</span>
-                                        <span className={`text-lg font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
+                                        <div className="flex flex-col">
+                                          <span className="text-[11px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                          <span className="text-[9px] font-bold text-zinc-600 uppercase mt-1">NF: R$ {(isUnifiedView ? (sums.sumQ2 + sums.sumAssin) : ((commissions[barber.id]?.quinzena_2_avulso || 0) + (commissions[barber.id]?.mes_assinatura || 0))).toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                          <span className={`text-lg font-display font-black italic ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>R$ {totals.q2.toFixed(2)}</span>
+                                          <button 
+                                            onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
+                                            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600'}`}
+                                          >
+                                            {commissions[barber.id]?.nf_q2_issued ? '✅ NF EMITIDA' : 'Emitir NF'}
+                                          </button>
+                                        </div>
                                       </div>
                                       <button 
                                         onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
@@ -882,6 +936,13 @@ function App() {
                       value={newProfessional.gov_pass}
                       onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
                     />
+                    <input 
+                      type="text" 
+                      placeholder="CNPJ" 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-2 sm:col-span-1"
+                      value={newProfessional.cnpj}
+                      onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
+                    />
                   </div>
                   <button 
                     onClick={async () => {
@@ -889,7 +950,7 @@ function App() {
                       const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                       if (error) return showNotification('error', error.message);
                       setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '' });
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
                     className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all sm:col-span-3"
@@ -904,10 +965,7 @@ function App() {
                   <thead className="sticky top-0 bg-zinc-950 z-10">
                     <tr className="border-b border-white/10">
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Unidade</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Chave Pix</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Credenciais Gov.br</th>
-                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ocultar no CRM</th>
+                      <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Lojas / CNPJ / Pix / Gov</th>
                       <th className="py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Ações</th>
                     </tr>
                   </thead>
@@ -915,74 +973,106 @@ function App() {
                     {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => (
                       <tr key={b.id} className="group">
                         <td className="py-4 text-sm font-bold text-white italic uppercase">{b.name}</td>
-                        <td className="py-4 text-xs text-zinc-500 font-bold">{units.find(u => u.id === b.unit_id)?.name}</td>
                         <td className="py-4">
-                          <input 
-                            type="text"
-                            className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-xs text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
-                            value={b.pix_key || ''}
-                            placeholder="Sem chave"
-                            onChange={async (e) => {
-                              const newVal = e.target.value;
-                              const { error } = await supabase.from('previa_barbers').update({ pix_key: newVal }).eq('id', b.id);
-                              if (error) return showNotification('error', error.message);
-                              setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: newVal} : x));
-                            }}
-                          />
+                           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Unidade</label>
+                                <select 
+                                  className="bg-black/40 border border-white/10 rounded-lg p-2 text-white text-[10px] outline-none focus:border-brand/50"
+                                  value={b.unit_id}
+                                  onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, unit_id: e.target.value} : x))}
+                                >
+                                  {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
+                                </select>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Pix</label>
+                                <input 
+                                  type="text"
+                                  className="bg-black/40 border border-white/5 rounded-lg px-2 py-1.5 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                                  value={b.pix_key || ''}
+                                  placeholder="Chave Pix"
+                                  onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: e.target.value} : x))}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">CNPJ</label>
+                                <input 
+                                  type="text"
+                                  className="bg-black/40 border border-white/5 rounded-lg px-2 py-1.5 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                                  value={b.cnpj || ''}
+                                  placeholder="00.000.000/0001-00"
+                                  onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: e.target.value} : x))}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Gov.br (Usuário / Senha)</label>
+                                <div className="flex gap-1">
+                                  <input 
+                                    type="text"
+                                    className="bg-black/40 border border-white/5 rounded-lg px-2 py-1.5 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                                    value={b.gov_user || ''}
+                                    placeholder="CPF"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
+                                  />
+                                  <input 
+                                    type="text"
+                                    className="bg-black/40 border border-white/5 rounded-lg px-2 py-1.5 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
+                                    value={b.gov_pass || ''}
+                                    placeholder="Senha"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
+                                  />
+                                </div>
+                              </div>
+                           </div>
                         </td>
                         <td className="py-4">
-                          <div className="flex flex-col gap-1.5">
-                            <input 
-                              type="text"
-                              className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-zinc-300 outline-none focus:border-brand/50 transition-all w-full"
-                              value={b.gov_user || ''}
-                              placeholder="CPF / Usuário"
-                              onChange={async (e) => {
-                                const newVal = e.target.value;
-                                const { error } = await supabase.from('previa_barbers').update({ gov_user: newVal }).eq('id', b.id);
-                                if (error) return showNotification('error', error.message);
-                                setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: newVal} : x));
-                              }}
-                            />
-                            <input 
-                              type="text"
-                              className="bg-black/40 border border-white/5 rounded-lg px-2 py-1 text-[10px] text-zinc-400 outline-none focus:border-brand/50 transition-all w-full font-mono"
-                              value={b.gov_pass || ''}
-                              placeholder="Senha"
-                              onChange={async (e) => {
-                                const newVal = e.target.value;
-                                const { error } = await supabase.from('previa_barbers').update({ gov_pass: newVal }).eq('id', b.id);
-                                if (error) return showNotification('error', error.message);
-                                setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: newVal} : x));
-                              }}
-                            />
-                          </div>
-                        </td>
-                        <td className="py-4 text-center">
-                          <button 
-                            onClick={async () => {
-                              const newVal = !b.is_hidden_crm;
-                              const { error } = await supabase.from('previa_barbers').update({ is_hidden_crm: newVal }).eq('id', b.id);
-                              if (error) return showNotification('error', error.message);
-                              setBarbers(barbers.map(x => x.id === b.id ? {...x, is_hidden_crm: newVal} : x));
-                            }}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all border ${b.is_hidden_crm ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
-                          >
-                            {b.is_hidden_crm ? '✅ Sim' : 'Não'}
-                          </button>
-                        </td>
-                        <td className="py-4 text-center">
-                          <button 
-                            onClick={async () => {
-                              if (!confirm(`Excluir ${b.name}?`)) return;
-                              const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
-                              if (error) return showNotification('error', error.message);
-                              setBarbers(barbers.filter(x => x.id !== b.id));
-                            }}
-                            className="p-2 text-zinc-700 hover:text-brand transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                           <div className="flex flex-col gap-2 items-center">
+                              <button 
+                                onClick={async () => {
+                                  const { error } = await supabase.from('previa_barbers').update({
+                                    unit_id: b.unit_id,
+                                    pix_key: b.pix_key,
+                                    cnpj: b.cnpj,
+                                    gov_user: b.gov_user,
+                                    gov_pass: b.gov_pass,
+                                    is_hidden_crm: b.is_hidden_crm
+                                  }).eq('id', b.id);
+                                  if (error) return showNotification('error', error.message);
+                                  showNotification('success', `${b.name} atualizado!`);
+                                }}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase py-2 rounded-lg transition-all shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-1.5"
+                              >
+                                <Save size={12} /> Salvar
+                              </button>
+                              
+                              <div className="flex gap-2 w-full">
+                                <button 
+                                  onClick={async () => {
+                                    const newVal = !b.is_hidden_crm;
+                                    const { error } = await supabase.from('previa_barbers').update({ is_hidden_crm: newVal }).eq('id', b.id);
+                                    if (error) return showNotification('error', error.message);
+                                    setBarbers(barbers.map(x => x.id === b.id ? {...x, is_hidden_crm: newVal} : x));
+                                  }}
+                                  className={`flex-1 py-2 rounded-lg text-[8px] font-black uppercase transition-all border ${b.is_hidden_crm ? 'bg-brand/10 border-brand/30 text-brand' : 'bg-white/5 border-white/10 text-zinc-600'}`}
+                                  title="Ocultar no CRM"
+                                >
+                                  CRM: {b.is_hidden_crm ? 'OFF' : 'ON'}
+                                </button>
+
+                                <button 
+                                  onClick={async () => {
+                                    if (!confirm(`Excluir ${b.name}?`)) return;
+                                    const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
+                                    if (error) return showNotification('error', error.message);
+                                    setBarbers(barbers.filter(x => x.id !== b.id));
+                                  }}
+                                  className="p-2 text-zinc-800 hover:text-brand transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                           </div>
                         </td>
                       </tr>
                     ))}

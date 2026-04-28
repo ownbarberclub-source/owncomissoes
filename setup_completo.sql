@@ -15,10 +15,16 @@ ALTER TABLE previa_barbers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Acesso publico previa_barbers" ON previa_barbers;
 CREATE POLICY "Acesso publico previa_barbers" ON previa_barbers FOR ALL USING (true);
 
--- Adicionar campos de Chave Pix e Credenciais Gov.br se não existirem
+-- Adicionar campos de Chave Pix, Credenciais Gov.br e CNPJ se não existirem
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS pix_key TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_user TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_pass TEXT;
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS cnpj TEXT;
+
+-- Adicionar campos de controle de NF e Imposto na tabela de pagamentos
+ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS nf_q1_issued BOOLEAN DEFAULT false;
+ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS nf_q2_issued BOOLEAN DEFAULT false;
+ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS tax_paid BOOLEAN DEFAULT false;
 
 
 -- 2. Tabela de lançamentos manuais de comissão
