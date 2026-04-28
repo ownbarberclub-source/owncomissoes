@@ -4,7 +4,7 @@ import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSess
 import { 
   Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
-  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText
+  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText, Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,6 +28,7 @@ function App() {
   const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const unitDropdownRef = useRef<HTMLDivElement>(null);
 
   const maskCNPJ = (value: string) => {
@@ -197,11 +198,17 @@ function App() {
 
   // Agrupa barbeiros por nome quando está na visão "Todas as Unidades"
   const groupedBarbers = useMemo(() => {
+    let filteredBarbers = barbers;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filteredBarbers = barbers.filter(b => b.name.toLowerCase().includes(q));
+    }
+
     if (selectedUnit !== 'all') {
-      return barbers.map(b => ({ id: b.id, all_ids: [b.id], name: b.name }));
+      return filteredBarbers.map(b => ({ id: b.id, all_ids: [b.id], name: b.name }));
     }
     const map = new Map<string, { id: string; all_ids: string[]; name: string }>();
-    barbers.forEach(b => {
+    filteredBarbers.forEach(b => {
       const key = b.name.trim().toLowerCase();
       if (map.has(key)) {
         map.get(key)!.all_ids.push(b.id);
@@ -210,7 +217,7 @@ function App() {
       }
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [barbers, selectedUnit]);
+  }, [barbers, selectedUnit, searchQuery]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -572,7 +579,7 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-40 space-y-8 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex flex-col gap-3 group hover:border-brand/30 transition-all shadow-xl relative z-[60]" ref={unitDropdownRef}>
             <div className="flex items-center gap-2 text-zinc-500">
               <Store size={16} className="group-hover:text-brand transition-colors" />
@@ -630,6 +637,19 @@ function App() {
               <label className="text-xs font-black uppercase tracking-widest text-zinc-500">Mês de Referência</label>
             </div>
             <input type="month" className="bg-transparent text-xl font-display font-black text-white outline-none cursor-pointer appearance-none italic uppercase" value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} />
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 flex items-center shadow-xl relative z-[40]">
+            <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <input
+                type="text"
+                placeholder="Pesquisar profissional..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white font-bold outline-none focus:border-brand/50 transition-all placeholder:text-zinc-600 text-sm shadow-inner"
+              />
+            </div>
           </div>
         </div>
 
