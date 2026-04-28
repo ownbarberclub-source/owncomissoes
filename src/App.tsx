@@ -556,6 +556,7 @@ function App() {
                                       {barber.name.substring(0, 2)}
                                     </div>
                                       <div className="flex flex-col gap-1">
+                                        <p className="text-lg font-display font-black text-white group-hover:text-brand transition-colors italic uppercase tracking-tight leading-tight">
                                           {barber.name}
                                         </p>
                                         <div className="flex flex-wrap items-center gap-2 mt-1">
