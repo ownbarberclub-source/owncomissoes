@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>('all');
+  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string>(new Date().toISOString().slice(0, 7));
   const [barbers, setBarbers] = useState<Barber[]>([]);
   
@@ -459,8 +459,8 @@ function App() {
               onClick={() => setUnitDropdownOpen(!unitDropdownOpen)}
               className="w-full flex items-center justify-between text-xl font-display font-black text-white italic uppercase text-left group/btn"
             >
-              <span className={selectedUnit === 'all' ? 'text-brand' : ''}>
-                {selectedUnit === 'all' ? '🌟 Todas as Unidades' : units.find(u => u.id === selectedUnit)?.name || 'Selecione...'}
+              <span className={selectedUnit === 'all' ? 'text-brand' : !selectedUnit ? 'text-zinc-500 animate-pulse' : ''}>
+                {selectedUnit === 'all' ? '🌟 Todas as Unidades' : units.find(u => u.id === selectedUnit)?.name || 'Selecione uma Unidade...'}
               </span>
               <ChevronDown size={20} className={`transition-transform duration-300 ${unitDropdownOpen ? 'rotate-180 text-brand' : 'text-zinc-500 group-hover/btn:text-white'}`} />
             </button>
@@ -522,8 +522,14 @@ function App() {
           </div>
         )}
 
-        <div className="relative">
-          {selectedUnit ? (
+        <div className="relative min-h-[400px]">
+          {!selectedUnit ? (
+            <div className="flex flex-col items-center justify-center py-32 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-sm animate-fade-in">
+              <Store size={48} className="text-zinc-700 mb-6" />
+              <h3 className="text-xl font-display font-black italic uppercase text-zinc-400 mb-2">Aguardando Seleção</h3>
+              <p className="text-zinc-600 text-sm font-medium">Selecione uma unidade no topo para visualizar os barbeiros.</p>
+            </div>
+          ) : (
             <AnimatePresence mode="wait">
               <motion.div key="comm" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
                 {groupedBarbers.length === 0 ? (
@@ -822,14 +828,6 @@ function App() {
                 )}
               </motion.div>
             </AnimatePresence>
-          ) : (
-            <div className="bg-white/5 border-2 border-dashed border-white/10 rounded-[40px] p-24 text-center backdrop-blur-sm">
-              <div className="w-24 h-24 bg-brand/5 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner border border-brand/10">
-                <AlertCircle className="text-brand opacity-40" size={48} />
-              </div>
-              <h2 className="text-2xl font-display font-black text-white mb-3 italic uppercase">Selecione uma unidade para começar</h2>
-              <p className="text-zinc-500 max-w-sm mx-auto text-sm">Escolha no topo a unidade desejada ou a visão unificada para visualizar os fechamentos.</p>
-            </div>
           )}
         </div>
       </main>
