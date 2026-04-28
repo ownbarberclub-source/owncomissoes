@@ -21,6 +21,9 @@ ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_user TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS gov_pass TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS cnpj TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'barbeiro';
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_name TEXT;
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_agency TEXT;
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_account TEXT;
 
 -- Adicionar campos de controle de NF e Imposto na tabela de pagamentos
 ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS nf_q1_issued BOOLEAN DEFAULT false;

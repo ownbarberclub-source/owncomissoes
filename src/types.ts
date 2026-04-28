@@ -15,6 +15,9 @@ export interface Barber {
   gov_pass?: string;
   cnpj?: string;
   category?: 'barbeiro' | 'adm';
+  bank_name?: string;
+  bank_agency?: string;
+  bank_account?: string;
 }
 
 export interface BarberGuarantee {

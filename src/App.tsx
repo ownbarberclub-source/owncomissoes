@@ -25,7 +25,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1183,13 +1183,31 @@ function App() {
                     value={newProfessional.gov_pass}
                     onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
                   />
+                  <input 
+                    type="text" placeholder="Nome do Banco (Ex: Itaú)"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.bank_name}
+                    onChange={(e) => setNewProfessional({...newProfessional, bank_name: e.target.value})}
+                  />
+                  <input 
+                    type="text" placeholder="Agência"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.bank_agency}
+                    onChange={(e) => setNewProfessional({...newProfessional, bank_agency: e.target.value})}
+                  />
+                  <input 
+                    type="text" placeholder="Conta Corrente"
+                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                    value={newProfessional.bank_account}
+                    onChange={(e) => setNewProfessional({...newProfessional, bank_account: e.target.value})}
+                  />
                   <button 
                     onClick={async () => {
                       if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
                       const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                       if (error) return showNotification('error', error.message);
                       setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
                     className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 sm:col-span-2 lg:col-span-1 flex items-center justify-center gap-2"
@@ -1325,12 +1343,37 @@ function App() {
                                     onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
                                   />
                                 </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Nome do Banco</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.bank_name || ''} placeholder="Ex: Itaú"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_name: e.target.value} : x))}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Agência</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.bank_agency || ''} placeholder="Agência"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_agency: e.target.value} : x))}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Conta Corrente</label>
+                                  <input type="text"
+                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                    value={b.bank_account || ''} placeholder="Conta Corrente"
+                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_account: e.target.value} : x))}
+                                  />
+                                </div>
                                 <button 
                                   onClick={async () => {
                                     const { error } = await supabase.from('previa_barbers').update({
                                       unit_id: b.unit_id, pix_key: b.pix_key, cnpj: b.cnpj,
                                       gov_user: b.gov_user, gov_pass: b.gov_pass,
-                                      category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm
+                                      category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm,
+                                      bank_name: b.bank_name, bank_agency: b.bank_agency, bank_account: b.bank_account
                                     }).eq('id', b.id);
                                     if (error) return showNotification('error', error.message);
                                     showNotification('success', `${b.name} atualizado!`);
