@@ -402,6 +402,36 @@ function App() {
     setVouchers([...vouchers, { barber_id: primaryId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0] }]);
   };
 
+  const saveVouchers = async (_barberId: string, allIds: string[]) => {
+    setSaving(true);
+    try {
+      // Delete current vouchers for this barber in this period
+      const { error: delError } = await supabase.from('previa_barber_vouchers').delete()
+        .eq('period', selectedPeriod).in('barber_id', allIds);
+      if (delError) throw delError;
+
+      // Re-insert updated list
+      const barberVouchers = vouchers.filter(v => allIds.includes(v.barber_id));
+      if (barberVouchers.length > 0) {
+        const toSave = barberVouchers.map(v => ({
+          barber_id: v.barber_id,
+          period: selectedPeriod,
+          value: parseFloat(v.value as any) || 0,
+          description: v.description,
+          deduct_from: v.deduct_from,
+          date: v.date
+        }));
+        const { error: insError } = await supabase.from('previa_barber_vouchers').insert(toSave);
+        if (insError) throw insError;
+      }
+      showNotification('success', 'Vales salvos com sucesso!');
+    } catch (error: any) {
+      showNotification('error', `Erro ao salvar vales: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
@@ -907,6 +937,25 @@ function App() {
                                           })}
                                         </div>
                                       )}
+
+                                      {/* Botão Salvar Vales */}
+                                      <div className="mt-6 flex items-center gap-3 justify-end">
+                                        <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                                          {barberVouchers.length} {barberVouchers.length === 1 ? 'vale' : 'vales'} — clique em salvar para persistir
+                                        </p>
+                                        <button
+                                          onClick={() => saveVouchers(barber.id, barber.all_ids)}
+                                          disabled={saving}
+                                          className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg border ${
+                                            saving
+                                              ? 'bg-zinc-800 text-zinc-500 border-zinc-700 cursor-not-allowed'
+                                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500/50 shadow-emerald-500/20 active:scale-95'
+                                          }`}
+                                        >
+                                          <Save size={15} />
+                                          {saving ? 'Salvando...' : 'Salvar Vales'}
+                                        </button>
+                                      </div>
                                     </td>
                                   </motion.tr>
                                 )}
