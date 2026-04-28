@@ -25,7 +25,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const unitDropdownRef = useRef<HTMLDivElement>(null);
@@ -239,11 +239,35 @@ function App() {
   };
 
   const calculateTotals = (primaryId: string, all_ids: string[]) => {
-    const sums = getUnifiedSums(all_ids);
-    const guar = getGuaranteeForBarber(primaryId);
+    const barber = barbers.find(b => b.id === primaryId);
+    const category = barber?.category || 'barbeiro';
     
-    const baseQ1 = guar ? Math.max(sums.sumQ1, guar.q1) : sums.sumQ1;
-    const baseQ2 = guar ? Math.max(sums.sumQ2, guar.q2 - sums.sumAssin) : sums.sumQ2;
+    const sums = getUnifiedSums(all_ids);
+    const guarValues = getGuaranteeForBarber(primaryId);
+    
+    if (category === 'adm') {
+      const barberGuar = guarantees[primaryId];
+      const monthlyGuar = (barberGuar && barberGuar.valid_until >= selectedPeriod) ? barberGuar.guarantee_value : 0;
+      
+      const totalGross = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
+      const baseMonthly = Math.max(totalGross, monthlyGuar);
+      
+      const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
+      const vTotal = barberVouchers.reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
+      
+      return {
+        q1: baseMonthly - vTotal,
+        q2: 0,
+        vQ1: vTotal,
+        vQ2: 0,
+        nfQ1: baseMonthly,
+        nfQ2: 0,
+        isAdm: true
+      };
+    }
+
+    const baseQ1 = guarValues ? Math.max(sums.sumQ1, guarValues.q1) : sums.sumQ1;
+    const baseQ2 = guarValues ? Math.max(sums.sumQ2, guarValues.q2 - sums.sumAssin) : sums.sumQ2;
     
     const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
     const vQ1 = barberVouchers.filter(v => v.deduct_from === 'q1').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
@@ -255,7 +279,8 @@ function App() {
       vQ1,
       vQ2,
       nfQ1: baseQ1,
-      nfQ2: baseQ2 + sums.sumAssin
+      nfQ2: baseQ2 + sums.sumAssin,
+      isAdm: false
     };
   };
 
@@ -546,8 +571,8 @@ function App() {
                       <thead>
                         <tr className="bg-white/5 border-b border-white/10">
                           <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest">Barbeiro</th>
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-72">Quinzena 1</th>
-                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-[400px]">Quinzena 2</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-72">Pagamento 1</th>
+                          <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-[400px]">Pagamento 2</th>
                           <th className="p-6 text-xs font-black text-zinc-500 uppercase tracking-widest w-40 text-center">Ações</th>
                         </tr>
                       </thead>
@@ -597,6 +622,9 @@ function App() {
                                           )}
                                         </div>
                                         <div className="flex items-center gap-4 mt-4">
+                                          <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'}`}>
+                                            {barbers.find(b => b.id === barber.id)?.category === 'adm' ? 'Administrativo' : 'Barbeiro'}
+                                          </div>
                                           <p className="text-[11px] text-zinc-600 font-black uppercase tracking-[0.2em] opacity-40">
                                             ID: {isUnifiedView && barber.all_ids.length > 1 ? `${barber.all_ids.length} Lojas Consolidadas` : barber.id.slice(0, 8)}
                                           </p>
@@ -612,10 +640,12 @@ function App() {
                                       </div>
                                   </div>
                                 </td>
-                                      <td className="p-6 align-top bg-white/[0.01]">
+                                      <td className={`p-6 align-top ${totals.isAdm ? 'bg-amber-500/[0.02]' : 'bg-white/[0.01]'}`}>
                                   <div className="space-y-5">
                                     <div>
-                                      <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto (Dia 01-15)</label>
+                                      <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">
+                                        {totals.isAdm ? 'Base Mensal / Salário' : 'Bruto (Dia 01-15)'}
+                                      </label>
                                       <div className="relative">
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
                                         <input 
@@ -631,7 +661,9 @@ function App() {
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                       <div className="flex flex-col gap-4 mb-4">
                                         <div className="flex flex-col gap-1">
-                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">
+                                            {totals.isAdm ? 'Líquido Mensal' : 'Líquido A Pagar'}
+                                          </span>
                                           <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ1 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
                                             R$ {totals.q1.toFixed(2)}
                                           </div>
@@ -661,68 +693,77 @@ function App() {
                                   </div>
                                 </td>
                                 <td className="p-6 align-top">
-                                  <div className="space-y-5">
-                                    <div className="flex gap-4">
-                                      <div className="flex-1">
-                                        <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Avulso (16-Fim)</label>
-                                        <div className="relative">
-                                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                                          <input 
-                                            type="number"
-                                            disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
-                                            placeholder="0"
-                                            value={isUnifiedView ? sums.sumQ2 : (commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso)}
-                                            onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
-                                          />
-                                        </div>
-                                      </div>
-                                      <div className="flex-1">
-                                        <label className="text-[10px] font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Assinaturas</label>
-                                        <div className="relative">
-                                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
-                                          <input 
-                                            type="number"
-                                            disabled={isUnifiedView}
-                                            className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
-                                            placeholder="0"
-                                            value={isUnifiedView ? sums.sumAssin : (commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura)}
-                                            onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
-                                          />
-                                        </div>
-                                      </div>
+                                  {totals.isAdm ? (
+                                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-10 opacity-30">
+                                      <Store size={32} className="mb-4" />
+                                      <p className="text-[10px] font-black uppercase tracking-widest text-center leading-relaxed">
+                                        Pagamento Mensal Único<br/>Habilitado para ADM
+                                      </p>
                                     </div>
-                                    <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
-                                      <div className="flex flex-col gap-4 mb-4">
-                                        <div className="flex flex-col gap-1">
-                                          <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
-                                          <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
-                                            R$ {totals.q2.toFixed(2)}
+                                  ) : (
+                                    <div className="space-y-5">
+                                      <div className="flex gap-4">
+                                        <div className="flex-1">
+                                          <label className="text-xs font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Avulso (16-Fim)</label>
+                                          <div className="relative">
+                                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                                            <input 
+                                              type="number"
+                                              disabled={isUnifiedView}
+                                              className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
+                                              placeholder="0"
+                                              value={isUnifiedView ? sums.sumQ2 : (commissions[barber.id]?.quinzena_2_avulso === 0 ? '' : commissions[barber.id]?.quinzena_2_avulso)}
+                                              onChange={(e) => handleCommissionChange(barber.id, 'quinzena_2_avulso', parseFloat(e.target.value) || 0)}
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="flex-1">
+                                          <label className="text-[10px] font-black text-zinc-600 uppercase mb-2 block tracking-widest">Bruto Assinaturas</label>
+                                          <div className="relative">
+                                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
+                                            <input 
+                                              type="number"
+                                              disabled={isUnifiedView}
+                                              className={`w-full border rounded-xl py-3 pl-9 pr-2 text-white font-bold outline-none transition-all text-base ${isUnifiedView ? 'bg-white/5 border-transparent text-zinc-500 cursor-not-allowed' : 'bg-white/5 border-white/10 focus:border-brand/50'}`}
+                                              placeholder="0"
+                                              value={isUnifiedView ? sums.sumAssin : (commissions[barber.id]?.mes_assinatura === 0 ? '' : commissions[barber.id]?.mes_assinatura)}
+                                              onChange={(e) => handleCommissionChange(barber.id, 'mes_assinatura', parseFloat(e.target.value) || 0)}
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
+                                        <div className="flex flex-col gap-4 mb-4">
+                                          <div className="flex flex-col gap-1">
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest leading-none">Líquido A Pagar</span>
+                                            <div className={`text-3xl font-display font-black italic tracking-tighter leading-none mt-1 break-all ${statusQ2 === 'paid' ? 'text-emerald-500' : 'text-white'}`}>
+                                              R$ {totals.q2.toFixed(2)}
+                                            </div>
+                                          </div>
+                                          
+                                          <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                                            <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
+                                              <FileText size={10} className="text-zinc-600" />
+                                              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ2.toFixed(2)}</span></span>
+                                            </div>
+                                            <button 
+                                              onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
+                                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
+                                            >
+                                              {commissions[barber.id]?.nf_q2_issued ? '✅ OK' : 'Emitir NF'}
+                                            </button>
                                           </div>
                                         </div>
                                         
-                                        <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                          <div className="flex items-center gap-2 px-2.5 py-1.5 bg-white/5 rounded-lg border border-white/10 shadow-inner">
-                                            <FileText size={10} className="text-zinc-600" />
-                                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white font-mono">{totals.nfQ2.toFixed(2)}</span></span>
-                                          </div>
-                                          <button 
-                                            onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border transition-all ${commissions[barber.id]?.nf_q2_issued ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-white/5 border-white/10 text-zinc-600 hover:text-white'}`}
-                                          >
-                                            {commissions[barber.id]?.nf_q2_issued ? '✅ OK' : 'Emitir NF'}
-                                          </button>
-                                        </div>
+                                        <button 
+                                          onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
+                                          className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ2 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
+                                        >
+                                          {statusQ2 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
+                                        </button>
                                       </div>
-                                      
-                                      <button 
-                                        onClick={() => toggleUnifiedStatus(barber.all_ids, 'status_q2', statusQ2)}
-                                        className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shadow-lg ${statusQ2 === 'paid' ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/10' : 'bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/10 hover:text-white'}`}
-                                      >
-                                        {statusQ2 === 'paid' ? '✅ Pagamento Realizado' : 'Marcar como Pago'}
-                                      </button>
                                     </div>
-                                  </div>
+                                  )}
                                 </td>
                                 <td className="p-6 align-top text-center">
                                   <div className="flex flex-col items-center gap-3">
@@ -968,6 +1009,14 @@ function App() {
                       value={newProfessional.cnpj}
                       onChange={(e) => setNewProfessional({...newProfessional, cnpj: e.target.value})}
                     />
+                    <select 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-brand/50 transition-all col-span-2 sm:col-span-1"
+                      value={newProfessional.category}
+                      onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
+                    >
+                      <option value="barbeiro" className="bg-zinc-950">Categoria: Barbeiro</option>
+                      <option value="adm" className="bg-zinc-950">Categoria: ADM</option>
+                    </select>
                   </div>
                   <button 
                     onClick={async () => {
@@ -975,7 +1024,7 @@ function App() {
                       const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                       if (error) return showNotification('error', error.message);
                       setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '' });
+                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro' });
                       showNotification('success', 'Profissional adicionado!');
                     }}
                     className="bg-brand text-white py-3 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all sm:col-span-3"
@@ -1094,6 +1143,17 @@ function App() {
                                       />
                                     </div>
                                   </div>
+                                  <div className="flex flex-col gap-2">
+                                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Categoria</label>
+                                    <select 
+                                      className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                      value={b.category || 'barbeiro'}
+                                      onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, category: e.target.value as any} : x))}
+                                    >
+                                      <option value="barbeiro" className="bg-zinc-950">Barbeiro</option>
+                                      <option value="adm" className="bg-zinc-950">ADM</option>
+                                    </select>
+                                  </div>
                                   <div className="col-span-2 mt-2">
                                     <button 
                                       onClick={async () => {
@@ -1103,6 +1163,7 @@ function App() {
                                           cnpj: b.cnpj,
                                           gov_user: b.gov_user,
                                           gov_pass: b.gov_pass,
+                                          category: b.category || 'barbeiro',
                                           is_hidden_crm: b.is_hidden_crm
                                         }).eq('id', b.id);
                                         if (error) return showNotification('error', error.message);
