@@ -626,9 +626,9 @@ function App() {
                                             </div>
                                           </div>
                                           <div className="flex flex-col items-end gap-2">
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/5">
-                                              <FileText size={10} className="text-zinc-600" />
-                                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">NF: <span className="text-zinc-300">R$ {totals.nfQ1.toFixed(2)}</span></span>
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/10 shadow-inner">
+                                              <FileText size={12} className="text-zinc-500" />
+                                              <span className="text-[11px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white text-xs font-mono">{totals.nfQ1.toFixed(2)}</span></span>
                                             </div>
                                             <button 
                                               onClick={() => handleCommissionChange(barber.id, 'nf_q1_issued', !commissions[barber.id]?.nf_q1_issued)}
@@ -691,9 +691,9 @@ function App() {
                                             </div>
                                           </div>
                                           <div className="flex flex-col items-end gap-2">
-                                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/5">
-                                              <FileText size={10} className="text-zinc-600" />
-                                              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">NF: <span className="text-zinc-300">R$ {totals.nfQ2.toFixed(2)}</span></span>
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-xl border border-white/10 shadow-inner">
+                                              <FileText size={12} className="text-zinc-500" />
+                                              <span className="text-[11px] font-black text-zinc-500 uppercase tracking-tight">NF: <span className="text-white text-xs font-mono">{totals.nfQ2.toFixed(2)}</span></span>
                                             </div>
                                             <button 
                                               onClick={() => handleCommissionChange(barber.id, 'nf_q2_issued', !commissions[barber.id]?.nf_q2_issued)}
