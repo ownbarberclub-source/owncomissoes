@@ -309,6 +309,9 @@ function App() {
     const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
     const vQ1 = barberVouchers.filter(v => v.deduct_from === 'q1').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
     const vQ2 = barberVouchers.filter(v => v.deduct_from === 'q2').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
+
+    const realMonthly = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
+    const totalGuarantee = guarValues ? guarantees[primaryId].guarantee_value : 0;
     
     return {
       q1: baseQ1 - vQ1,
@@ -317,7 +320,14 @@ function App() {
       vQ2,
       nfQ1: baseQ1,
       nfQ2: baseQ2 + sums.sumAssin,
-      isAdm: false
+      isAdm: false,
+      performance: guarValues ? {
+        realMonthly,
+        totalGuarantee,
+        paidQ1: baseQ1,
+        netQ2: Math.max(0, (baseQ2 + sums.sumAssin)),
+        status: realMonthly >= totalGuarantee ? 'META SUPERADA' : 'Abaixo da Garantia - Coberto pelo Caixa'
+      } : null
     };
   };
 
@@ -914,6 +924,38 @@ function App() {
                                               R$ {totals.q2.toFixed(2)}
                                             </div>
                                           </div>
+
+                                          {totals.performance && (
+                                            <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                                              <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-1.5 h-1.5 bg-brand rounded-full" />
+                                                <span className="text-[10px] font-black uppercase text-white tracking-[0.2em]">Extrato de Performance Mensal</span>
+                                              </div>
+                                              
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                                                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total Produzido (Mês)</p>
+                                                  <p className="text-xs font-mono font-bold text-zinc-300">R$ {totals.performance.realMonthly.toFixed(2)}</p>
+                                                </div>
+                                                <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                                                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Garantia Total</p>
+                                                  <p className="text-xs font-mono font-bold text-zinc-300">R$ {totals.performance.totalGuarantee.toFixed(2)}</p>
+                                                </div>
+                                                <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                                                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total Pago Q1</p>
+                                                  <p className="text-xs font-mono font-bold text-zinc-300">R$ {totals.performance.paidQ1.toFixed(2)}</p>
+                                                </div>
+                                                <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                                                  <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Bruto a Pagar Q2</p>
+                                                  <p className="text-xs font-mono font-bold text-zinc-300">R$ {totals.performance.netQ2.toFixed(2)}</p>
+                                                </div>
+                                              </div>
+
+                                              <div className={`p-2 rounded-lg text-center border ${totals.performance.status === 'META SUPERADA' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-brand/10 border-brand/20 text-brand'}`}>
+                                                <p className="text-[9px] font-black uppercase tracking-[0.15em]">{totals.performance.status}</p>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
                                         
                                         <button 
