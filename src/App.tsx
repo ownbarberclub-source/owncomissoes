@@ -284,8 +284,27 @@ function App() {
       };
     }
 
-    const baseQ1 = guarValues ? Math.max(sums.sumQ1, guarValues.q1) : sums.sumQ1;
-    const baseQ2 = guarValues ? Math.max(sums.sumQ2, guarValues.q2 - sums.sumAssin) : sums.sumQ2;
+    let baseQ1 = sums.sumQ1;
+    let baseQ2 = sums.sumQ2;
+
+    if (guarValues) {
+      // Regra: Trava de Comissionamento Quinzenal com Garantia
+      // PASSO 1: Pagamento Q1 = MAX(Real Q1, Garantia Q1)
+      baseQ1 = Math.max(sums.sumQ1, guarValues.q1);
+
+      // PASSO 2: Encontro de Contas Mensal na Q2
+      const totalRealMensal = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
+      const totalGarantiaMensal = guarantees[primaryId].guarantee_value;
+      const totalDireitoMensal = Math.max(totalRealMensal, totalGarantiaMensal);
+
+      // O que o profissional deve receber na Q2 (Bruto Calculado Q2)
+      // é o Direito Mensal menos o que ele já "usou" na Q1 (baseQ1)
+      const bruteQ2 = Math.max(0, totalDireitoMensal - baseQ1);
+      
+      // No sistema, nfQ2 = baseQ2 + sums.sumAssin. 
+      // Então, para que nfQ2 seja igual a bruteQ2, ajustamos baseQ2:
+      baseQ2 = bruteQ2 - sums.sumAssin;
+    }
     
     const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
     const vQ1 = barberVouchers.filter(v => v.deduct_from === 'q1').reduce((acc, v) => acc + (parseFloat(v.value as any) || 0), 0);
