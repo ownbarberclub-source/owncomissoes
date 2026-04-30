@@ -24,6 +24,7 @@ export interface BarberGuarantee {
   barber_id: string;
   guarantee_value: number;
   valid_until: string; // YYYY-MM
+  pay_guarantee_on_q1?: boolean;
 }
 
 export interface CommissionRecord {

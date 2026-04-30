@@ -21,7 +21,7 @@ function App() {
   
   const [expandedBarbers, setExpandedBarbers] = useState<string[]>([]);
   const [settingsModalBarber, setSettingsModalBarber] = useState<string | null>(null);
-  const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string}>({value: '', until: ''});
+  const [tempGuarantee, setTempGuarantee] = useState<{value: string, until: string, payOnQ1: boolean}>({value: '', until: '', payOnQ1: true});
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
@@ -289,8 +289,11 @@ function App() {
 
     if (guarValues) {
       // Regra: Trava de Comissionamento Quinzenal com Garantia
-      // PASSO 1: Pagamento Q1 = MAX(Real Q1, Garantia Q1)
-      baseQ1 = Math.max(sums.sumQ1, guarValues.q1);
+      // PASSO 1: Pagamento Q1
+      // Se pay_guarantee_on_q1 for falso, paga apenas a produção real na Q1.
+      // Se for verdadeiro (ou nulo por padrão), paga o maior entre real e garantia Q1.
+      const shouldPayGuarOnQ1 = guarantees[primaryId].pay_guarantee_on_q1 !== false;
+      baseQ1 = shouldPayGuarOnQ1 ? Math.max(sums.sumQ1, guarValues.q1) : sums.sumQ1;
 
       // PASSO 2: Encontro de Contas Mensal na Q2
       const totalRealMensal = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
@@ -340,9 +343,14 @@ function App() {
          await supabase.from('previa_barber_guarantees').delete().eq('barber_id', settingsModalBarber);
          setGuarantees(prev => { const next = {...prev}; delete next[settingsModalBarber]; return next; });
       } else {
-         const newG = { barber_id: settingsModalBarber, guarantee_value: gValue, valid_until: tempGuarantee.until };
-         await supabase.from('previa_barber_guarantees').upsert(newG);
-         setGuarantees(prev => ({...prev, [settingsModalBarber]: newG}));
+          const newG = { 
+            barber_id: settingsModalBarber, 
+            guarantee_value: gValue, 
+            valid_until: tempGuarantee.until,
+            pay_guarantee_on_q1: tempGuarantee.payOnQ1
+          };
+          await supabase.from('previa_barber_guarantees').upsert(newG);
+          setGuarantees(prev => ({...prev, [settingsModalBarber]: newG}));
       }
       showNotification('success', 'Garantia atualizada!');
       setSettingsModalBarber(null);
@@ -982,7 +990,11 @@ function App() {
                                       onClick={() => {
                                         setSettingsModalBarber(barber.id);
                                         const g = guarantees[barber.id];
-                                        setTempGuarantee(g ? { value: g.guarantee_value.toString(), until: g.valid_until } : { value: '', until: '' });
+                                        setTempGuarantee(g ? { 
+                                          value: g.guarantee_value.toString(), 
+                                          until: g.valid_until,
+                                          payOnQ1: g.pay_guarantee_on_q1 !== false 
+                                        } : { value: '', until: '', payOnQ1: true });
                                       }}
                                       className="w-full p-3 bg-white/5 text-zinc-500 hover:text-brand hover:bg-brand/10 border border-white/10 hover:border-brand/30 rounded-xl transition-all flex items-center justify-center gap-2"
                                       title="Configurar Garantia"
@@ -1146,6 +1158,16 @@ function App() {
                   <div className="relative">
                     <CalendarDays className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                     <input type="month" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-10 text-white font-bold outline-none focus:border-brand/50 transition-all" value={tempGuarantee.until} onChange={(e) => setTempGuarantee(prev => ({...prev, until: e.target.value}))} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10 group hover:border-brand/30 transition-all cursor-pointer" onClick={() => setTempGuarantee(prev => ({...prev, payOnQ1: !prev.payOnQ1}))}>
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-black text-white uppercase tracking-wider">Pagar Garantia na Q1?</span>
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase">Se desativado, o ajuste é feito apenas na Q2</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full relative transition-all ${tempGuarantee.payOnQ1 ? 'bg-brand' : 'bg-zinc-800'}`}>
+                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${tempGuarantee.payOnQ1 ? 'left-6' : 'left-1'}`} />
                   </div>
                 </div>
                 <div className="bg-brand/5 p-5 rounded-2xl border border-brand/10">
