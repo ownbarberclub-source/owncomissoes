@@ -338,7 +338,9 @@ function App() {
     let totalQ2 = 0;
     groupedBarbers.forEach(barber => {
       const totals = calculateTotals(barber.id, barber.all_ids);
-      totalQ1 += totals.q1;
+      if (!totals.isAdm) {
+          totalQ1 += totals.q1;
+      }
       totalQ2 += totals.q2;
     });
     return { totalQ1, totalQ2 };
