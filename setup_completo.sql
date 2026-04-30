@@ -71,7 +71,8 @@ CREATE POLICY "Acesso total para todos" ON previa_barber_vouchers FOR ALL USING 
 CREATE TABLE IF NOT EXISTS previa_barber_guarantees (
   barber_id UUID PRIMARY KEY REFERENCES previa_barbers(id) ON DELETE CASCADE,
   guarantee_value NUMERIC DEFAULT 0, -- Valor total mensal (Ex: 3000)
-  valid_until TEXT -- Ex: '2025-07' (formato YYYY-MM para facilitar)
+  valid_until TEXT, -- Ex: '2025-07' (formato YYYY-MM para facilitar)
+  pay_guarantee_on_q1 BOOLEAN DEFAULT true
 );
 
 ALTER TABLE previa_barber_guarantees ENABLE ROW LEVEL SECURITY;

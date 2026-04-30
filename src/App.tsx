@@ -164,6 +164,7 @@ function App() {
     const { data: guarData } = await supabase
       .from('previa_barber_guarantees')
       .select('*')
+      .eq('period', selectedPeriod)
       .in('barber_id', barberList.map(b => b.id));
 
     if (guarData) {
@@ -232,8 +233,9 @@ function App() {
 
   const getGuaranteeForBarber = (barberId: string) => {
     const g = guarantees[barberId];
-    if (!g || !g.valid_until || !g.guarantee_value) return null;
-    if (selectedPeriod > g.valid_until) return null;
+    if (!g || !g.guarantee_value) return null;
+    // Removido check de valid_until pois agora é por período selecionado
+
 
     const totalDays = getDaysInMonth(selectedPeriod);
     const q1 = (g.guarantee_value / totalDays) * 15;
@@ -339,17 +341,18 @@ function App() {
     setSaving(true);
     try {
       const gValue = parseFloat(tempGuarantee.value) || 0;
-      if (gValue === 0 || !tempGuarantee.until) {
-         await supabase.from('previa_barber_guarantees').delete().eq('barber_id', settingsModalBarber);
+      if (gValue === 0) {
+         await supabase.from('previa_barber_guarantees').delete().match({ barber_id: settingsModalBarber, period: selectedPeriod });
          setGuarantees(prev => { const next = {...prev}; delete next[settingsModalBarber]; return next; });
       } else {
           const newG = { 
             barber_id: settingsModalBarber, 
+            period: selectedPeriod,
             guarantee_value: gValue, 
-            valid_until: tempGuarantee.until,
+            valid_until: tempGuarantee.until || selectedPeriod,
             pay_guarantee_on_q1: tempGuarantee.payOnQ1
           };
-          await supabase.from('previa_barber_guarantees').upsert(newG);
+          await supabase.from('previa_barber_guarantees').upsert(newG, { onConflict: 'barber_id,period' });
           setGuarantees(prev => ({...prev, [settingsModalBarber]: newG}));
       }
       showNotification('success', 'Garantia atualizada!');

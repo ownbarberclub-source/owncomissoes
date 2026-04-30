@@ -22,8 +22,9 @@ export interface Barber {
 
 export interface BarberGuarantee {
   barber_id: string;
+  period: string; // YYYY-MM
   guarantee_value: number;
-  valid_until: string; // YYYY-MM
+  valid_until: string; // YYYY-MM (Legacy/Reference)
   pay_guarantee_on_q1?: boolean;
 }
 
