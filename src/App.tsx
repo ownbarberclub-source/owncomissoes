@@ -220,18 +220,6 @@ function App() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [barbers, selectedUnit, searchQuery]);
 
-  // Cálculo dos Somatórios Globais para exibição no topo
-  const globalTotals = useMemo(() => {
-    let totalQ1 = 0;
-    let totalQ2 = 0;
-    groupedBarbers.forEach(barber => {
-      const totals = calculateTotals(barber.id, barber.all_ids);
-      totalQ1 += totals.q1;
-      totalQ2 += totals.q2;
-    });
-    return { totalQ1, totalQ2 };
-  }, [groupedBarbers, commissions, vouchers, guarantees]);
-
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 3000);
@@ -278,10 +266,10 @@ function App() {
     const guarValues = getGuaranteeForBarber(primaryId);
     
     if (category === 'adm') {
-      const barberGuar = guarantees[primaryId];
-      const monthlyGuar = (barberGuar && barberGuar.valid_until >= selectedPeriod) ? barberGuar.guarantee_value : 0;
+      const barberGuar = guarantees?.[primaryId];
+      const monthlyGuar = (barberGuar?.guarantee_value) || 0;
       
-      const totalGross = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
+      const totalGross = (sums?.sumQ1 || 0) + (sums?.sumQ2 || 0) + (sums?.sumAssin || 0);
       const baseMonthly = Math.max(totalGross, monthlyGuar);
       
       const barberVouchers = vouchers.filter(v => all_ids.includes(v.barber_id));
@@ -294,7 +282,8 @@ function App() {
         vQ2: 0,
         nfQ1: baseMonthly,
         nfQ2: 0,
-        isAdm: true
+        isAdm: true,
+        performance: null
       };
     }
 
@@ -304,22 +293,17 @@ function App() {
     if (guarValues) {
       // Regra: Trava de Comissionamento Quinzenal com Garantia
       // PASSO 1: Pagamento Q1
-      // Se pay_guarantee_on_q1 for falso, paga apenas a produção real na Q1.
-      // Se for verdadeiro (ou nulo por padrão), paga o maior entre real e garantia Q1.
-      const shouldPayGuarOnQ1 = guarantees[primaryId].pay_guarantee_on_q1 !== false;
+      const shouldPayGuarOnQ1 = guarantees?.[primaryId]?.pay_guarantee_on_q1 !== false;
       baseQ1 = shouldPayGuarOnQ1 ? Math.max(sums.sumQ1, guarValues.q1) : sums.sumQ1;
 
       // PASSO 2: Encontro de Contas Mensal na Q2
       const totalRealMensal = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
-      const totalGarantiaMensal = guarantees[primaryId].guarantee_value;
+      const totalGarantiaMensal = guarantees?.[primaryId]?.guarantee_value || 0;
       const totalDireitoMensal = Math.max(totalRealMensal, totalGarantiaMensal);
 
       // O que o profissional deve receber na Q2 (Bruto Calculado Q2)
-      // é o Direito Mensal menos o que ele já "usou" na Q1 (baseQ1)
       const bruteQ2 = Math.max(0, totalDireitoMensal - baseQ1);
       
-      // No sistema, nfQ2 = baseQ2 + sums.sumAssin. 
-      // Então, para que nfQ2 seja igual a bruteQ2, ajustamos baseQ2:
       baseQ2 = bruteQ2 - sums.sumAssin;
     }
     
@@ -347,6 +331,18 @@ function App() {
       } : null
     };
   };
+
+  // Cálculo dos Somatórios Globais para exibição no topo
+  const globalTotals = useMemo(() => {
+    let totalQ1 = 0;
+    let totalQ2 = 0;
+    groupedBarbers.forEach(barber => {
+      const totals = calculateTotals(barber.id, barber.all_ids);
+      totalQ1 += totals.q1;
+      totalQ2 += totals.q2;
+    });
+    return { totalQ1, totalQ2 };
+  }, [groupedBarbers, commissions, vouchers, guarantees, calculateTotals]);
 
   const saveGuarantee = async () => {
     if (!settingsModalBarber) return;
