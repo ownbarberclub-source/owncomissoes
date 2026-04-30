@@ -4,7 +4,7 @@ import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSess
 import { 
   Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
-  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText, Search
+  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText, Search, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -219,6 +219,18 @@ function App() {
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [barbers, selectedUnit, searchQuery]);
+
+  // Cálculo dos Somatórios Globais para exibição no topo
+  const globalTotals = useMemo(() => {
+    let totalQ1 = 0;
+    let totalQ2 = 0;
+    groupedBarbers.forEach(barber => {
+      const totals = calculateTotals(barber.id, barber.all_ids);
+      totalQ1 += totals.q1;
+      totalQ2 += totals.q2;
+    });
+    return { totalQ1, totalQ2 };
+  }, [groupedBarbers, commissions, vouchers, guarantees]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -692,6 +704,42 @@ function App() {
             </div>
           </div>
         </div>
+
+        {selectedUnit && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+            <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 backdrop-blur-sm border border-emerald-500/20 rounded-2xl p-6 shadow-xl flex items-center justify-between group hover:border-emerald-500/40 transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-inner">
+                  <DollarSign size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-500/80 uppercase tracking-[0.2em] mb-1">Total a Pagar Q1</p>
+                  <p className="text-3xl font-display font-black text-white italic tracking-tighter">R$ {globalTotals.totalQ1.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </div>
+              <div className="hidden lg:block text-right">
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Período 01 a 15</p>
+                <p className="text-[10px] font-black text-emerald-500 uppercase mt-1">Liberado ✅</p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-brand/10 to-brand/5 backdrop-blur-sm border border-brand/20 rounded-2xl p-6 shadow-xl flex items-center justify-between group hover:border-brand/40 transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-brand/20 flex items-center justify-center text-brand border border-brand/20 shadow-inner">
+                  <TrendingUp size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-brand/80 uppercase tracking-[0.2em] mb-1">Total a Pagar Q2</p>
+                  <p className="text-3xl font-display font-black text-white italic tracking-tighter">R$ {globalTotals.totalQ2.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                </div>
+              </div>
+              <div className="hidden lg:block text-right">
+                <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Período 16 ao Fim</p>
+                <p className="text-[10px] font-black text-brand uppercase mt-1">Fechamento Mensal 🏁</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isUnifiedView && (
           <div className="bg-brand/10 border border-brand/20 p-6 rounded-2xl flex items-start gap-4 backdrop-blur-md animate-fade-in">
