@@ -164,12 +164,18 @@ function App() {
     const { data: guarData } = await supabase
       .from('previa_barber_guarantees')
       .select('*')
-      .eq('period', selectedPeriod)
-      .in('barber_id', barberList.map(b => b.id));
+      .lte('period', selectedPeriod)
+      .gte('valid_until', selectedPeriod)
+      .in('barber_id', barberList.map(b => b.id))
+      .order('period', { ascending: false });
 
     if (guarData) {
       const gMap: Record<string, BarberGuarantee> = {};
-      guarData.forEach(g => { gMap[g.barber_id] = g; });
+      guarData.forEach(g => { 
+        if (!gMap[g.barber_id]) {
+          gMap[g.barber_id] = g; 
+        }
+      });
       setGuarantees(gMap);
     }
   };
@@ -229,6 +235,18 @@ function App() {
     if (!period) return 30;
     const [year, month] = period.split('-');
     return new Date(parseInt(year), parseInt(month), 0).getDate();
+  };
+
+  const addMonthsToPeriod = (period: string, months: number): string => {
+    if (!period) return period;
+    const [year, month] = period.split('-').map(Number);
+    let newMonth = month + months;
+    let newYear = year;
+    while (newMonth > 12) {
+      newMonth -= 12;
+      newYear += 1;
+    }
+    return `${newYear}-${newMonth.toString().padStart(2, '0')}`;
   };
 
   const getGuaranteeForBarber = (barberId: string) => {
@@ -314,9 +332,21 @@ function App() {
     const realMonthly = sums.sumQ1 + sums.sumQ2 + sums.sumAssin;
     const totalGuarantee = guarValues ? guarantees[primaryId].guarantee_value : 0;
     
+    const initialQ1 = baseQ1 - vQ1;
+    const initialQ2 = (baseQ2 + sums.sumAssin) - vQ2;
+    
+    let finalQ1 = initialQ1;
+    let finalQ2 = initialQ2;
+
+    if (finalQ1 < 0) {
+      const debit = Math.abs(finalQ1);
+      finalQ1 = 0;
+      finalQ2 -= debit;
+    }
+
     return {
-      q1: baseQ1 - vQ1,
-      q2: (baseQ2 + sums.sumAssin) - vQ2,
+      q1: finalQ1,
+      q2: finalQ2,
       vQ1,
       vQ2,
       nfQ1: baseQ1,
@@ -455,14 +485,20 @@ function App() {
 
       const barberVouchers = vouchers.filter(v => allIds.includes(v.barber_id));
       if (barberVouchers.length > 0) {
-        const vouchersToSave = barberVouchers.map(v => ({
-          barber_id: v.barber_id,
-          period: selectedPeriod,
-          value: parseFloat(v.value as any) || 0,
-          description: v.description,
-          deduct_from: v.deduct_from,
-          date: v.date
-        }));
+        const vouchersToSave: any[] = [];
+        barberVouchers.forEach(v => {
+          const installments = v.installments && v.installments > 0 ? v.installments : 1;
+          for (let i = 0; i < installments; i++) {
+            vouchersToSave.push({
+              barber_id: v.barber_id,
+              period: addMonthsToPeriod(selectedPeriod, i),
+              value: parseFloat(v.value as any) || 0,
+              description: installments > 1 ? `${v.description} (${i + 1}/${installments})` : v.description,
+              deduct_from: v.deduct_from,
+              date: v.date
+            });
+          }
+        });
         const { error: vouchError } = await supabase.from('previa_barber_vouchers').insert(vouchersToSave);
         if (vouchError) throw vouchError;
       }
@@ -481,7 +517,7 @@ function App() {
   };
 
   const addVoucher = (primaryId: string) => {
-    setVouchers([...vouchers, { barber_id: primaryId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0] }]);
+    setVouchers([...vouchers, { barber_id: primaryId, value: 0, description: '', deduct_from: 'q1', date: new Date().toISOString().split('T')[0], installments: 1 }]);
   };
 
   const saveVouchers = async (_barberId: string, allIds: string[]) => {
@@ -495,14 +531,20 @@ function App() {
       // Re-insert updated list
       const barberVouchers = vouchers.filter(v => allIds.includes(v.barber_id));
       if (barberVouchers.length > 0) {
-        const toSave = barberVouchers.map(v => ({
-          barber_id: v.barber_id,
-          period: selectedPeriod,
-          value: parseFloat(v.value as any) || 0,
-          description: v.description,
-          deduct_from: v.deduct_from,
-          date: v.date
-        }));
+        const toSave: any[] = [];
+        barberVouchers.forEach(v => {
+          const installments = v.installments && v.installments > 0 ? v.installments : 1;
+          for (let i = 0; i < installments; i++) {
+            toSave.push({
+              barber_id: v.barber_id,
+              period: addMonthsToPeriod(selectedPeriod, i),
+              value: parseFloat(v.value as any) || 0,
+              description: installments > 1 ? `${v.description} (${i + 1}/${installments})` : v.description,
+              deduct_from: v.deduct_from,
+              date: v.date
+            });
+          }
+        });
         const { error: insError } = await supabase.from('previa_barber_vouchers').insert(toSave);
         if (insError) throw insError;
       }
@@ -1103,9 +1145,13 @@ function App() {
                                                     <label className="text-[9px] font-black text-zinc-500 uppercase mb-1.5 block tracking-widest">Descrição</label>
                                                     <input type="text" className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-white text-xs outline-none focus:border-brand/50 transition-all" placeholder="Ex: Adiantamento" value={v.description} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].description = e.target.value; setVouchers(updated); }} />
                                                   </div>
-                                                  <div className="w-28">
+                                                  <div className="w-24">
                                                     <label className="text-[9px] font-black text-zinc-500 uppercase mb-1.5 block tracking-widest">Valor (R$)</label>
                                                     <input type="number" className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-white text-xs font-bold outline-none focus:border-brand/50 transition-all" placeholder="0" value={v.value || ''} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].value = parseFloat(e.target.value) || 0; setVouchers(updated); }} />
+                                                  </div>
+                                                  <div className="w-20">
+                                                    <label className="text-[9px] font-black text-zinc-500 uppercase mb-1.5 block tracking-widest">Parcelas</label>
+                                                    <input type="number" min="1" className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-white text-xs font-bold outline-none focus:border-brand/50 transition-all" placeholder="1" value={v.installments || 1} onChange={(e) => { const updated = [...vouchers]; updated[globalIdx].installments = Math.max(1, parseInt(e.target.value) || 1); setVouchers(updated); }} />
                                                   </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">

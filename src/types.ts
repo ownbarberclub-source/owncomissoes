@@ -48,6 +48,7 @@ export interface Voucher {
   description: string;
   deduct_from: 'q1' | 'q2';
   date: string;
+  installments?: number;
 }
 
 export interface UserSession {
