@@ -18,6 +18,17 @@ export interface Barber {
   bank_name?: string;
   bank_agency?: string;
   bank_account?: string;
+  // Dados pessoais
+  cpf?: string;
+  marital_status?: string;
+  phone?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
+  address_zip?: string;
 }
 
 export interface BarberGuarantee {

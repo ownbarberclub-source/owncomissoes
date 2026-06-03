@@ -4,9 +4,11 @@ import type { Unit, Barber, BarberGuarantee, CommissionRecord, Voucher, UserSess
 import { 
   Save, LogOut, Plus, Trash2, AlertCircle, CheckCircle2,
   DollarSign, CalendarDays, Store, Wallet, ShieldCheck, User as UserIcon,
-  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText, Search, TrendingUp
+  Settings, X, ChevronDown, ChevronUp, Pencil, Building2, Smartphone, Lock, FileText, Search, TrendingUp, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function App() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -25,7 +27,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', marital_status: '', phone: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +40,90 @@ function App() {
     if (d.length <= 8) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5)}`;
     if (d.length <= 12) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8)}`;
     return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+  };
+
+  const maskCPF = (value: string) => {
+    const d = value.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`;
+    if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+    return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  };
+
+  const maskPhone = (value: string) => {
+    const d = value.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 2) return d.length ? `(${d}` : d;
+    if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+    return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  };
+
+  const maskCEP = (value: string) => {
+    const d = value.replace(/\D/g, '').slice(0, 8);
+    if (d.length <= 5) return d;
+    return `${d.slice(0,5)}-${d.slice(5)}`;
+  };
+
+  const exportProfessionalsPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(225, 6, 0);
+    doc.rect(0, 0, pageWidth, 22, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('OWN BARBER CLUB', 15, 10);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Relatório de Profissionais', 15, 17);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, pageWidth - 15, 17, { align: 'right' });
+
+    const sortedBarbers = [...barbers].sort((a, b) => a.name.localeCompare(b.name));
+
+    const tableData = sortedBarbers.map(b => [
+      b.name,
+      units.find(u => u.id === b.unit_id)?.name || '-',
+      b.category === 'adm' ? 'ADM' : 'Barbeiro',
+      b.cpf || '-',
+      b.marital_status || '-',
+      b.phone || '-',
+      b.cnpj || '-',
+      b.pix_key || '-',
+      b.bank_name ? `${b.bank_name}${b.bank_agency ? ' Ag: '+b.bank_agency : ''}${b.bank_account ? ' CC: '+b.bank_account : ''}` : '-',
+      [b.address_street, b.address_number, b.address_complement, b.address_neighborhood, b.address_city, b.address_state, b.address_zip].filter(Boolean).join(', ') || '-',
+    ]);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['Nome', 'Unidade', 'Categoria', 'CPF', 'Est. Civil', 'Telefone', 'CNPJ', 'Chave Pix', 'Dados Bancários', 'Endereço']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 7, cellPadding: 2.5, textColor: [30, 30, 30], lineColor: [220, 220, 220] },
+      headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      alternateRowStyles: { fillColor: [248, 248, 248] },
+      columnStyles: {
+        0: { cellWidth: 32 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 24 },
+        6: { cellWidth: 32 },
+        7: { cellWidth: 32 },
+        8: { cellWidth: 32 },
+        9: { cellWidth: 'auto' },
+      },
+      didDrawPage: (data: any) => {
+        const pageCount = doc.getNumberOfPages();
+        doc.setFontSize(7);
+        doc.setTextColor(150);
+        doc.text(`Página ${data.pageNumber} de ${pageCount}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 5, { align: 'center' });
+      }
+    });
+
+    doc.save(`OWN_Profissionais_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.pdf`);
   };
 
   useEffect(() => {
@@ -1313,92 +1399,204 @@ function App() {
                 <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
                   <Plus size={16} className="text-brand" /> Novo Profissional
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <input 
-                    type="text" placeholder="Nome Completo"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.name}
-                    onChange={(e) => setNewProfessional({...newProfessional, name: e.target.value})}
-                  />
-                  <select 
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all appearance-none"
-                    value={newProfessional.unit_id}
-                    onChange={(e) => setNewProfessional({...newProfessional, unit_id: e.target.value})}
-                  >
-                    <option value="" className="bg-zinc-950">Selecione Unidade</option>
-                    {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
-                  </select>
-                  <select 
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
-                    value={newProfessional.category}
-                    onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
-                  >
-                    <option value="barbeiro" className="bg-zinc-950">Categoria: Barbeiro</option>
-                    <option value="adm" className="bg-zinc-950">Categoria: ADM</option>
-                  </select>
-                  <input 
-                    type="text" placeholder="Chave Pix"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.pix_key}
-                    onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
-                  />
-                  <input 
-                    type="text" placeholder="00.000.000/0001-00"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.cnpj}
-                    onChange={(e) => setNewProfessional({...newProfessional, cnpj: maskCNPJ(e.target.value)})}
-                    maxLength={18}
-                  />
-                  <input 
-                    type="text" placeholder="Login Gov.br"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.gov_user}
-                    onChange={(e) => setNewProfessional({...newProfessional, gov_user: e.target.value})}
-                  />
-                  <input 
-                    type="text" placeholder="Senha Gov.br"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.gov_pass}
-                    onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
-                  />
-                  <input 
-                    type="text" placeholder="Nome do Banco (Ex: Itaú)"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.bank_name}
-                    onChange={(e) => setNewProfessional({...newProfessional, bank_name: e.target.value})}
-                  />
-                  <input 
-                    type="text" placeholder="Agência"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.bank_agency}
-                    onChange={(e) => setNewProfessional({...newProfessional, bank_agency: e.target.value})}
-                  />
-                  <input 
-                    type="text" placeholder="Conta Corrente"
-                    className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
-                    value={newProfessional.bank_account}
-                    onChange={(e) => setNewProfessional({...newProfessional, bank_account: e.target.value})}
-                  />
-                  <button 
-                    onClick={async () => {
-                      if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
-                      const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
-                      if (error) return showNotification('error', error.message);
-                      setBarbers([...barbers, data[0]]);
-                      setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '' });
-                      showNotification('success', 'Profissional adicionado!');
-                    }}
-                    className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 sm:col-span-2 lg:col-span-1 flex items-center justify-center gap-2"
-                  >
-                    <Plus size={16} /> Adicionar
-                  </button>
+
+                {/* Dados Básicos */}
+                <div className="mb-2">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <span className="w-4 h-px bg-zinc-700 inline-block" />Dados Básicos<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <input 
+                      type="text" placeholder="Nome Completo"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.name}
+                      onChange={(e) => setNewProfessional({...newProfessional, name: e.target.value})}
+                    />
+                    <select 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all appearance-none"
+                      value={newProfessional.unit_id}
+                      onChange={(e) => setNewProfessional({...newProfessional, unit_id: e.target.value})}
+                    >
+                      <option value="" className="bg-zinc-950">Selecione Unidade</option>
+                      {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
+                    </select>
+                    <select 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                      value={newProfessional.category}
+                      onChange={(e) => setNewProfessional({...newProfessional, category: e.target.value as any})}
+                    >
+                      <option value="barbeiro" className="bg-zinc-950">Categoria: Barbeiro</option>
+                      <option value="adm" className="bg-zinc-950">Categoria: ADM</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dados Pessoais */}
+                <div className="mb-2 mt-5">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <span className="w-4 h-px bg-zinc-700 inline-block" />Dados Pessoais<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <input 
+                      type="text" placeholder="CPF (000.000.000-00)"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.cpf}
+                      onChange={(e) => setNewProfessional({...newProfessional, cpf: maskCPF(e.target.value)})}
+                      maxLength={14}
+                    />
+                    <select 
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                      value={newProfessional.marital_status}
+                      onChange={(e) => setNewProfessional({...newProfessional, marital_status: e.target.value})}
+                    >
+                      <option value="" className="bg-zinc-950">Estado Civil</option>
+                      <option value="Solteiro(a)" className="bg-zinc-950">Solteiro(a)</option>
+                      <option value="Casado(a)" className="bg-zinc-950">Casado(a)</option>
+                      <option value="Divorciado(a)" className="bg-zinc-950">Divorciado(a)</option>
+                      <option value="Viúvo(a)" className="bg-zinc-950">Viúvo(a)</option>
+                      <option value="União Estável" className="bg-zinc-950">União Estável</option>
+                    </select>
+                    <input 
+                      type="text" placeholder="Telefone / WhatsApp"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.phone}
+                      onChange={(e) => setNewProfessional({...newProfessional, phone: maskPhone(e.target.value)})}
+                      maxLength={16}
+                    />
+                  </div>
+                </div>
+
+                {/* Endereço */}
+                <div className="mb-2 mt-5">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <span className="w-4 h-px bg-zinc-700 inline-block" />Endereço<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <input 
+                      type="text" placeholder="Rua / Av."
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600 sm:col-span-2"
+                      value={newProfessional.address_street}
+                      onChange={(e) => setNewProfessional({...newProfessional, address_street: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Número"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.address_number}
+                      onChange={(e) => setNewProfessional({...newProfessional, address_number: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Complemento"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.address_complement}
+                      onChange={(e) => setNewProfessional({...newProfessional, address_complement: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Bairro"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.address_neighborhood}
+                      onChange={(e) => setNewProfessional({...newProfessional, address_neighborhood: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Cidade"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.address_city}
+                      onChange={(e) => setNewProfessional({...newProfessional, address_city: e.target.value})}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input 
+                        type="text" placeholder="UF"
+                        className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600 uppercase"
+                        value={newProfessional.address_state}
+                        onChange={(e) => setNewProfessional({...newProfessional, address_state: e.target.value.toUpperCase().slice(0,2)})}
+                        maxLength={2}
+                      />
+                      <input 
+                        type="text" placeholder="CEP"
+                        className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                        value={newProfessional.address_zip}
+                        onChange={(e) => setNewProfessional({...newProfessional, address_zip: maskCEP(e.target.value)})}
+                        maxLength={9}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Fiscais / Bancários */}
+                <div className="mb-2 mt-5">
+                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                    <span className="w-4 h-px bg-zinc-700 inline-block" />Fiscal &amp; Bancário<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <input 
+                      type="text" placeholder="Chave Pix"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.pix_key}
+                      onChange={(e) => setNewProfessional({...newProfessional, pix_key: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="00.000.000/0001-00"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.cnpj}
+                      onChange={(e) => setNewProfessional({...newProfessional, cnpj: maskCNPJ(e.target.value)})}
+                      maxLength={18}
+                    />
+                    <input 
+                      type="text" placeholder="Login Gov.br"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.gov_user}
+                      onChange={(e) => setNewProfessional({...newProfessional, gov_user: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Senha Gov.br"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.gov_pass}
+                      onChange={(e) => setNewProfessional({...newProfessional, gov_pass: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Nome do Banco (Ex: Itaú)"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.bank_name}
+                      onChange={(e) => setNewProfessional({...newProfessional, bank_name: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Agência"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.bank_agency}
+                      onChange={(e) => setNewProfessional({...newProfessional, bank_agency: e.target.value})}
+                    />
+                    <input 
+                      type="text" placeholder="Conta Corrente"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.bank_account}
+                      onChange={(e) => setNewProfessional({...newProfessional, bank_account: e.target.value})}
+                    />
+                    <button 
+                      onClick={async () => {
+                        if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
+                        const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
+                        if (error) return showNotification('error', error.message);
+                        setBarbers([...barbers, data[0]]);
+                        setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', marital_status: '', phone: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
+                        showNotification('success', 'Profissional adicionado!');
+                      }}
+                      className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
+                    >
+                      <Plus size={16} /> Adicionar
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Lista de Profissionais */}
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-                <div className="p-6 border-b border-white/10">
+                <div className="p-6 border-b border-white/10 flex items-center justify-between">
                   <h3 className="text-sm font-black text-white uppercase tracking-widest">{barbers.length} Profissionais Cadastrados</h3>
+                  <button
+                    onClick={exportProfessionalsPDF}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-white/10 bg-white/5 hover:bg-brand/10 hover:border-brand/30 hover:text-brand text-zinc-400 transition-all"
+                  >
+                    <Download size={14} /> Exportar PDF
+                  </button>
                 </div>
                 <div className="divide-y divide-white/5">
                   {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => {
@@ -1466,101 +1664,234 @@ function App() {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="mt-5 pt-5 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Unidade</label>
-                                  <select 
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
-                                    value={b.unit_id}
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, unit_id: e.target.value} : x))}
-                                  >
-                                    {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
-                                  </select>
+                              <div className="mt-5 pt-5 border-t border-white/5 space-y-5">
+
+                                {/* Dados Básicos */}
+                                <div>
+                                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <span className="w-4 h-px bg-zinc-700 inline-block" />Dados Básicos<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Unidade</label>
+                                      <select 
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                        value={b.unit_id}
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, unit_id: e.target.value} : x))}
+                                      >
+                                        {units.map(u => <option key={u.id} value={u.id} className="bg-zinc-950">{u.name}</option>)}
+                                      </select>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Categoria</label>
+                                      <select 
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                        value={b.category || 'barbeiro'}
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, category: e.target.value as any} : x))}
+                                      >
+                                        <option value="barbeiro" className="bg-zinc-950">Barbeiro</option>
+                                        <option value="adm" className="bg-zinc-950">ADM</option>
+                                      </select>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Categoria</label>
-                                  <select 
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
-                                    value={b.category || 'barbeiro'}
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, category: e.target.value as any} : x))}
-                                  >
-                                    <option value="barbeiro" className="bg-zinc-950">Barbeiro</option>
-                                    <option value="adm" className="bg-zinc-950">ADM</option>
-                                  </select>
+
+                                {/* Dados Pessoais */}
+                                <div>
+                                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <span className="w-4 h-px bg-zinc-700 inline-block" />Dados Pessoais<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CPF</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.cpf || ''} placeholder="000.000.000-00"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cpf: maskCPF(e.target.value)} : x))}
+                                        maxLength={14}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Estado Civil</label>
+                                      <select 
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
+                                        value={b.marital_status || ''}
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, marital_status: e.target.value} : x))}
+                                      >
+                                        <option value="" className="bg-zinc-950">Selecione</option>
+                                        <option value="Solteiro(a)" className="bg-zinc-950">Solteiro(a)</option>
+                                        <option value="Casado(a)" className="bg-zinc-950">Casado(a)</option>
+                                        <option value="Divorciado(a)" className="bg-zinc-950">Divorciado(a)</option>
+                                        <option value="Viúvo(a)" className="bg-zinc-950">Viúvo(a)</option>
+                                        <option value="União Estável" className="bg-zinc-950">União Estável</option>
+                                      </select>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Telefone</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.phone || ''} placeholder="(00) 00000-0000"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, phone: maskPhone(e.target.value)} : x))}
+                                        maxLength={16}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Chave Pix</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.pix_key || ''} placeholder="Chave Pix"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: e.target.value} : x))}
-                                  />
+
+                                {/* Endereço */}
+                                <div>
+                                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <span className="w-4 h-px bg-zinc-700 inline-block" />Endereço<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Rua / Av.</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.address_street || ''} placeholder="Rua / Av."
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_street: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Número</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.address_number || ''} placeholder="Nº"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_number: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Complemento</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.address_complement || ''} placeholder="Apto, Bloco..."
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_complement: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Bairro</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.address_neighborhood || ''} placeholder="Bairro"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_neighborhood: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Cidade</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.address_city || ''} placeholder="Cidade"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_city: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div className="flex flex-col gap-1.5">
+                                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">UF</label>
+                                        <input type="text"
+                                          className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all uppercase"
+                                          value={b.address_state || ''} placeholder="UF"
+                                          onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_state: e.target.value.toUpperCase().slice(0,2)} : x))}
+                                          maxLength={2}
+                                        />
+                                      </div>
+                                      <div className="flex flex-col gap-1.5">
+                                        <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CEP</label>
+                                        <input type="text"
+                                          className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                          value={b.address_zip || ''} placeholder="00000-000"
+                                          onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, address_zip: maskCEP(e.target.value)} : x))}
+                                          maxLength={9}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CNPJ</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.cnpj || ''} placeholder="00.000.000/0001-00"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: maskCNPJ(e.target.value)} : x))}
-                                    maxLength={18}
-                                  />
+
+                                {/* Dados Fiscais / Bancários */}
+                                <div>
+                                  <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <span className="w-4 h-px bg-zinc-700 inline-block" />Fiscal &amp; Bancário<span className="flex-1 h-px bg-zinc-800 inline-block" />
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Chave Pix</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.pix_key || ''} placeholder="Chave Pix"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, pix_key: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">CNPJ</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.cnpj || ''} placeholder="00.000.000/0001-00"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, cnpj: maskCNPJ(e.target.value)} : x))}
+                                        maxLength={18}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Login Gov.br</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.gov_user || ''} placeholder="CPF"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha Gov.br</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.gov_pass || ''} placeholder="Senha"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Nome do Banco</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.bank_name || ''} placeholder="Ex: Itaú"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_name: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Agência</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.bank_agency || ''} placeholder="Agência"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_agency: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Conta Corrente</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.bank_account || ''} placeholder="Conta Corrente"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_account: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <button 
+                                      onClick={async () => {
+                                        const { error } = await supabase.from('previa_barbers').update({
+                                          unit_id: b.unit_id, pix_key: b.pix_key, cnpj: b.cnpj,
+                                          gov_user: b.gov_user, gov_pass: b.gov_pass,
+                                          category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm,
+                                          bank_name: b.bank_name, bank_agency: b.bank_agency, bank_account: b.bank_account,
+                                          cpf: b.cpf, marital_status: b.marital_status, phone: b.phone,
+                                          address_street: b.address_street, address_number: b.address_number,
+                                          address_complement: b.address_complement, address_neighborhood: b.address_neighborhood,
+                                          address_city: b.address_city, address_state: b.address_state, address_zip: b.address_zip
+                                        }).eq('id', b.id);
+                                        if (error) return showNotification('error', error.message);
+                                        showNotification('success', `${b.name} atualizado!`);
+                                        setEditingBarberId(null);
+                                      }}
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 sm:col-span-2 lg:col-span-1"
+                                    >
+                                      <Save size={14} /> Salvar Alterações
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Login Gov.br</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.gov_user || ''} placeholder="CPF"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_user: e.target.value} : x))}
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Senha Gov.br</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.gov_pass || ''} placeholder="Senha"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, gov_pass: e.target.value} : x))}
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Nome do Banco</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.bank_name || ''} placeholder="Ex: Itaú"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_name: e.target.value} : x))}
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Agência</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.bank_agency || ''} placeholder="Agência"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_agency: e.target.value} : x))}
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Conta Corrente</label>
-                                  <input type="text"
-                                    className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
-                                    value={b.bank_account || ''} placeholder="Conta Corrente"
-                                    onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_account: e.target.value} : x))}
-                                  />
-                                </div>
-                                <button 
-                                  onClick={async () => {
-                                    const { error } = await supabase.from('previa_barbers').update({
-                                      unit_id: b.unit_id, pix_key: b.pix_key, cnpj: b.cnpj,
-                                      gov_user: b.gov_user, gov_pass: b.gov_pass,
-                                      category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm,
-                                      bank_name: b.bank_name, bank_agency: b.bank_agency, bank_account: b.bank_account
-                                    }).eq('id', b.id);
-                                    if (error) return showNotification('error', error.message);
-                                    showNotification('success', `${b.name} atualizado!`);
-                                    setEditingBarberId(null);
-                                  }}
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase py-3 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 sm:col-span-2 lg:col-span-1"
-                                >
-                                  <Save size={14} /> Salvar Alterações
-                                </button>
                               </div>
                             </motion.div>
                           )}
