@@ -27,7 +27,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', marital_status: '', phone: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,8 +87,11 @@ function App() {
       units.find(u => u.id === b.unit_id)?.name || '-',
       b.category === 'adm' ? 'ADM' : 'Barbeiro',
       b.cpf || '-',
+      b.rg || '-',
+      b.birth_date ? new Date(b.birth_date + 'T12:00:00').toLocaleDateString('pt-BR') : '-',
       b.marital_status || '-',
       b.phone || '-',
+      b.email || '-',
       b.cnpj || '-',
       b.pix_key || '-',
       b.bank_name ? `${b.bank_name}${b.bank_agency ? ' Ag: '+b.bank_agency : ''}${b.bank_account ? ' CC: '+b.bank_account : ''}` : '-',
@@ -97,23 +100,25 @@ function App() {
 
     autoTable(doc, {
       startY: 28,
-      head: [['Nome', 'Unidade', 'Categoria', 'CPF', 'Est. Civil', 'Telefone', 'CNPJ', 'Chave Pix', 'Dados Bancários', 'Endereço']],
+      head: [['Nome', 'Unidade', 'Categoria', 'CPF', 'RG', 'Nascimento', 'Est. Civil', 'Telefone', 'E-mail', 'CNPJ', 'Chave Pix', 'Dados Bancários', 'Endereço']],
       body: tableData,
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 2.5, textColor: [30, 30, 30], lineColor: [220, 220, 220] },
-      headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7 },
+      styles: { fontSize: 6.5, cellPadding: 2, textColor: [30, 30, 30], lineColor: [220, 220, 220] },
+      headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 6.5 },
       alternateRowStyles: { fillColor: [248, 248, 248] },
       columnStyles: {
-        0: { cellWidth: 32 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 24 },
+        0: { cellWidth: 28 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 16 },
+        3: { cellWidth: 22 },
         4: { cellWidth: 18 },
-        5: { cellWidth: 24 },
-        6: { cellWidth: 32 },
-        7: { cellWidth: 32 },
-        8: { cellWidth: 32 },
-        9: { cellWidth: 'auto' },
+        5: { cellWidth: 18 },
+        6: { cellWidth: 18 },
+        7: { cellWidth: 22 },
+        8: { cellWidth: 28 },
+        9: { cellWidth: 28 },
+        10: { cellWidth: 28 },
+        11: { cellWidth: 'auto' },
       },
       didDrawPage: (data: any) => {
         const pageCount = doc.getNumberOfPages();
@@ -1444,6 +1449,21 @@ function App() {
                       onChange={(e) => setNewProfessional({...newProfessional, cpf: maskCPF(e.target.value)})}
                       maxLength={14}
                     />
+                    <input 
+                      type="text" placeholder="RG"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.rg}
+                      onChange={(e) => setNewProfessional({...newProfessional, rg: e.target.value})}
+                    />
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
+                      <input 
+                        type="date"
+                        className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
+                        value={newProfessional.birth_date}
+                        onChange={(e) => setNewProfessional({...newProfessional, birth_date: e.target.value})}
+                      />
+                    </div>
                     <select 
                       className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all"
                       value={newProfessional.marital_status}
@@ -1462,6 +1482,12 @@ function App() {
                       value={newProfessional.phone}
                       onChange={(e) => setNewProfessional({...newProfessional, phone: maskPhone(e.target.value)})}
                       maxLength={16}
+                    />
+                    <input 
+                      type="email" placeholder="E-mail"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                      value={newProfessional.email}
+                      onChange={(e) => setNewProfessional({...newProfessional, email: e.target.value})}
                     />
                   </div>
                 </div>
@@ -1576,7 +1602,7 @@ function App() {
                         const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
                         if (error) return showNotification('error', error.message);
                         setBarbers([...barbers, data[0]]);
-                        setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', marital_status: '', phone: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
+                        setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
                         showNotification('success', 'Profissional adicionado!');
                       }}
                       className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
@@ -1712,6 +1738,22 @@ function App() {
                                       />
                                     </div>
                                     <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">RG</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.rg || ''} placeholder="RG"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, rg: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Data de Nascimento</label>
+                                      <input type="date"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.birth_date || ''}
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, birth_date: e.target.value} : x))}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
                                       <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Estado Civil</label>
                                       <select 
                                         className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50"
@@ -1733,6 +1775,14 @@ function App() {
                                         value={b.phone || ''} placeholder="(00) 00000-0000"
                                         onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, phone: maskPhone(e.target.value)} : x))}
                                         maxLength={16}
+                                      />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">E-mail</label>
+                                      <input type="email"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all"
+                                        value={b.email || ''} placeholder="email@exemplo.com"
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, email: e.target.value} : x))}
                                       />
                                     </div>
                                   </div>
@@ -1877,7 +1927,7 @@ function App() {
                                           gov_user: b.gov_user, gov_pass: b.gov_pass,
                                           category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm,
                                           bank_name: b.bank_name, bank_agency: b.bank_agency, bank_account: b.bank_account,
-                                          cpf: b.cpf, marital_status: b.marital_status, phone: b.phone,
+                                          cpf: b.cpf, rg: b.rg, birth_date: b.birth_date, marital_status: b.marital_status, phone: b.phone, email: b.email,
                                           address_street: b.address_street, address_number: b.address_number,
                                           address_complement: b.address_complement, address_neighborhood: b.address_neighborhood,
                                           address_city: b.address_city, address_state: b.address_state, address_zip: b.address_zip

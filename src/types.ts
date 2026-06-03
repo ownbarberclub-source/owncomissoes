@@ -20,8 +20,11 @@ export interface Barber {
   bank_account?: string;
   // Dados pessoais
   cpf?: string;
+  rg?: string;
+  birth_date?: string;
   marital_status?: string;
   phone?: string;
+  email?: string;
   address_street?: string;
   address_number?: string;
   address_complement?: string;
