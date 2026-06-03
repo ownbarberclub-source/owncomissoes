@@ -23,6 +23,7 @@ export interface Barber {
   rg?: string;
   birth_date?: string;
   marital_status?: string;
+  nationality?: string;
   phone?: string;
   email?: string;
   address_street?: string;
