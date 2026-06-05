@@ -1611,7 +1611,11 @@ function App() {
                     <button 
                       onClick={async () => {
                         if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
-                        const { data, error } = await supabase.from('previa_barbers').insert([newProfessional]).select();
+                        const payload = {
+                          ...newProfessional,
+                          birth_date: newProfessional.birth_date ? newProfessional.birth_date : null
+                        };
+                        const { data, error } = await supabase.from('previa_barbers').insert([payload]).select();
                         if (error) return showNotification('error', error.message);
                         setBarbers([...barbers, data[0]]);
                         setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', nationality: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
@@ -1947,7 +1951,9 @@ function App() {
                                           gov_user: b.gov_user, gov_pass: b.gov_pass,
                                           category: b.category || 'barbeiro', is_hidden_crm: b.is_hidden_crm,
                                           bank_name: b.bank_name, bank_agency: b.bank_agency, bank_account: b.bank_account,
-                                          cpf: b.cpf, rg: b.rg, birth_date: b.birth_date, marital_status: b.marital_status, nationality: b.nationality, phone: b.phone, email: b.email,
+                                          cpf: b.cpf, rg: b.rg, 
+                                          birth_date: b.birth_date ? b.birth_date : null, 
+                                          marital_status: b.marital_status, nationality: b.nationality, phone: b.phone, email: b.email,
                                           address_street: b.address_street, address_number: b.address_number,
                                           address_complement: b.address_complement, address_neighborhood: b.address_neighborhood,
                                           address_city: b.address_city, address_state: b.address_state, address_zip: b.address_zip
