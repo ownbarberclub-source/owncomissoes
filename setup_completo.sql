@@ -24,6 +24,7 @@ ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'barbe
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_name TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_agency TEXT;
 ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS bank_account TEXT;
+ALTER TABLE previa_barbers ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 
 -- Adicionar campos de controle de NF e Imposto na tabela de pagamentos
 ALTER TABLE previa_manual_payments ADD COLUMN IF NOT EXISTS nf_q1_issued BOOLEAN DEFAULT false;

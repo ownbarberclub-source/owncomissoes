@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS previa_barbers (
     nickname TEXT,
     photo_url TEXT,
     is_hidden_crm BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

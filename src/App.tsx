@@ -298,10 +298,14 @@ function App() {
 
   // Agrupa barbeiros por nome quando está na visão "Todas as Unidades"
   const groupedBarbers = useMemo(() => {
-    let filteredBarbers = barbers;
+    let filteredBarbers = barbers.filter(b => 
+      b.is_active !== false || 
+      (commissions[b.id] && (commissions[b.id].quinzena_1 > 0 || commissions[b.id].quinzena_2_avulso > 0 || commissions[b.id].mes_assinatura > 0)) ||
+      vouchers.some(v => v.barber_id === b.id)
+    );
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      filteredBarbers = barbers.filter(b => b.name.toLowerCase().includes(q));
+      filteredBarbers = filteredBarbers.filter(b => b.name.toLowerCase().includes(q));
     }
 
     if (selectedUnit !== 'all') {
@@ -317,7 +321,7 @@ function App() {
       }
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [barbers, selectedUnit, searchQuery]);
+  }, [barbers, selectedUnit, searchQuery, commissions, vouchers]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -1633,7 +1637,7 @@ function App() {
                   </button>
                 </div>
                 <div className="divide-y divide-white/5">
-                  {barbers.sort((a,b) => a.name.localeCompare(b.name)).map(b => {
+                  {barbers.filter(b => b.is_active !== false).sort((a,b) => a.name.localeCompare(b.name)).map(b => {
                     const isEditing = editingBarberId === b.id;
                     return (
                       <div key={b.id} className="p-6 transition-colors hover:bg-white/[0.02]">
@@ -1678,7 +1682,7 @@ function App() {
                             <button 
                               onClick={async () => {
                                 if (!confirm(`Excluir ${b.name}?`)) return;
-                                const { error } = await supabase.from('previa_barbers').delete().eq('id', b.id);
+                                const { error } = await supabase.from('previa_barbers').update({ is_active: false }).eq('id', b.id);
                                 if (error) return showNotification('error', error.message);
                                 setBarbers(barbers.filter(x => x.id !== b.id));
                               }}

@@ -10,6 +10,7 @@ export interface Barber {
   nickname?: string;
   photo_url?: string;
   is_hidden_crm?: boolean;
+  is_active?: boolean;
   pix_key?: string;
   gov_user?: string;
   gov_pass?: string;
