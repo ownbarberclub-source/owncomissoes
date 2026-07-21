@@ -34,6 +34,8 @@ export interface Barber {
   address_city?: string;
   address_state?: string;
   address_zip?: string;
+  contract_link?: string;
+  is_contract_signed?: boolean;
 }
 
 export interface BarberGuarantee {

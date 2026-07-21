@@ -27,7 +27,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [manageProfessionalsModal, setManageProfessionalsModal] = useState(false);
-  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', nationality: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
+  const [newProfessional, setNewProfessional] = useState({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', nationality: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '', contract_link: '', is_contract_signed: false });
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
   const [editingBarberId, setEditingBarberId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1608,6 +1608,22 @@ function App() {
                       value={newProfessional.bank_account}
                       onChange={(e) => setNewProfessional({...newProfessional, bank_account: e.target.value})}
                     />
+                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 rounded-xl p-3.5">
+                      <input 
+                        type="checkbox" 
+                        id="new_is_contract_signed"
+                        className="w-4 h-4 accent-brand cursor-pointer"
+                        checked={newProfessional.is_contract_signed}
+                        onChange={(e) => setNewProfessional({...newProfessional, is_contract_signed: e.target.checked})}
+                      />
+                      <label htmlFor="new_is_contract_signed" className="text-zinc-400 text-sm cursor-pointer select-none">Contrato Assinado</label>
+                    </div>
+                    <input 
+                      type="text" placeholder="Link do Contrato (Google Drive)"
+                      className="bg-black/40 border border-white/10 rounded-xl p-3.5 text-white text-sm outline-none focus:border-brand/50 transition-all placeholder-zinc-600 sm:col-span-2"
+                      value={newProfessional.contract_link}
+                      onChange={(e) => setNewProfessional({...newProfessional, contract_link: e.target.value})}
+                    />
                     <button 
                       onClick={async () => {
                         if (!newProfessional.name || !newProfessional.unit_id) return showNotification('error', 'Preencha nome e unidade');
@@ -1618,7 +1634,7 @@ function App() {
                         const { data, error } = await supabase.from('previa_barbers').insert([payload]).select();
                         if (error) return showNotification('error', error.message);
                         setBarbers([...barbers, data[0]]);
-                        setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', nationality: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '' });
+                        setNewProfessional({ name: '', unit_id: '', is_hidden_crm: true, pix_key: '', gov_user: '', gov_pass: '', cnpj: '', category: 'barbeiro', bank_name: '', bank_agency: '', bank_account: '', cpf: '', rg: '', birth_date: '', marital_status: '', nationality: '', phone: '', email: '', address_street: '', address_number: '', address_complement: '', address_neighborhood: '', address_city: '', address_state: '', address_zip: '', contract_link: '', is_contract_signed: false });
                         showNotification('success', 'Profissional adicionado!');
                       }}
                       className="bg-brand text-white py-3.5 rounded-xl font-display font-black italic uppercase text-xs tracking-widest hover:bg-brand-light transition-all shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
@@ -1658,6 +1674,27 @@ function App() {
                                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase ${
                                   b.category === 'adm' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
                                 }`}>{b.category === 'adm' ? 'ADM' : 'Barbeiro'}</span>
+                                {b.contract_link && (
+                                  <a 
+                                    href={b.contract_link} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase flex items-center gap-1 border transition-all hover:opacity-80 ${
+                                      b.is_contract_signed 
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                        : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                    }`}
+                                    title={b.is_contract_signed ? "Contrato Assinado" : "Contrato Pendente de Assinatura"}
+                                  >
+                                    <FileText size={10} /> 
+                                    <span>Contrato</span>
+                                    {b.is_contract_signed ? (
+                                      <CheckCircle2 size={9} className="text-emerald-400" />
+                                    ) : (
+                                      <AlertCircle size={9} className="text-amber-400" />
+                                    )}
+                                  </a>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1944,6 +1981,24 @@ function App() {
                                         onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, bank_account: e.target.value} : x))}
                                       />
                                     </div>
+                                    <div className="flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl p-3">
+                                      <input 
+                                        type="checkbox" 
+                                        id={`edit_is_contract_signed_${b.id}`}
+                                        className="w-4 h-4 accent-brand cursor-pointer"
+                                        checked={b.is_contract_signed || false}
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, is_contract_signed: e.target.checked} : x))}
+                                      />
+                                      <label htmlFor={`edit_is_contract_signed_${b.id}`} className="text-zinc-400 text-xs cursor-pointer select-none">Contrato Assinado</label>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Link do Contrato (Google Drive)</label>
+                                      <input type="text"
+                                        className="bg-zinc-900 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-brand/50 transition-all placeholder-zinc-600"
+                                        value={b.contract_link || ''} placeholder="https://drive.google.com/..."
+                                        onChange={(e) => setBarbers(barbers.map(x => x.id === b.id ? {...x, contract_link: e.target.value} : x))}
+                                      />
+                                    </div>
                                     <button 
                                       onClick={async () => {
                                         const { error } = await supabase.from('previa_barbers').update({
@@ -1956,7 +2011,8 @@ function App() {
                                           marital_status: b.marital_status, nationality: b.nationality, phone: b.phone, email: b.email,
                                           address_street: b.address_street, address_number: b.address_number,
                                           address_complement: b.address_complement, address_neighborhood: b.address_neighborhood,
-                                          address_city: b.address_city, address_state: b.address_state, address_zip: b.address_zip
+                                          address_city: b.address_city, address_state: b.address_state, address_zip: b.address_zip,
+                                          contract_link: b.contract_link, is_contract_signed: b.is_contract_signed
                                         }).eq('id', b.id);
                                         if (error) return showNotification('error', error.message);
                                         showNotification('success', `${b.name} atualizado!`);
